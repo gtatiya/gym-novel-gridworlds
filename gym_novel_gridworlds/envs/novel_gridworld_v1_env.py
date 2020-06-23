@@ -26,12 +26,13 @@ class NovelGridworldV1Env(gym.Env):
         self.agent_facing_str = 'NORTH'
         self.agent_facing_id = self.direction_id[self.agent_facing_str]
         self.block_in_front_str = 'air'
-        self.block_in_front_id = 0  # Air
+        self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.items = ['wall', 'crafting_table', 'tree']
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'wall': 2}  # ID cannot be 0 as air = 0
-        self.items_quantity = {'crafting_table': 1, 'tree': 5}  # Do not include wall, quantity must be more than  0
+        # items_quantity when the episode starts, do not include wall, quantity must be more than  0
+        self.items_quantity = {'crafting_table': 1, 'tree': 5}
         self.inventory_items_quantity = {}
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item

@@ -25,7 +25,7 @@ class NovelGridworldV0Env(gym.Env):
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
         self.agent_facing_str = 'NORTH'
         self.agent_facing_id = self.direction_id[self.agent_facing_str]
-        self.block_in_front = 0  # Air
+        self.block_in_front = 0  # air
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.items = ['wall', 'crafting_table']
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'wall': 2}  # ID cannot be 0 as air = 0

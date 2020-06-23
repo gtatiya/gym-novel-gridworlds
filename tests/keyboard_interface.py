@@ -49,7 +49,8 @@ for i in range(100):
 
     print("action: ", action, env.action_str[action])
     observation, reward, done, info = env.step(action)
-    # print("inventory_items_quantity: ", env.inventory_items_quantity)
+    print("inventory_items_quantity: ", env.inventory_items_quantity)
+    print("items_quantity: ", env.items_quantity)
 
     print("Step: " + str(i) + ", reward: ", reward)
     # print("observation: ", observation)

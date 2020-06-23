@@ -50,14 +50,12 @@ For example, enjoy PPO2 on NovelGridworld-v0 during 10 episodes:
 python enjoy.py -env NovelGridworld-v0 -algo ppo2 -episodes 10
 ```
 
-## Environments
-
-### NovelGridworld
+## [Environments](https://github.com/gtatiya/gym-novel-gridworlds/wiki#environments)
 
 <table>
 <tr>
 <td>
-NovelGridworld-v0<br/>
+<a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v0">NovelGridworld-v0</a>
 <img src="pics/NovelGridworld-v0.gif" alt="drawing" width="800"/>
 </td>
 <td>
