@@ -5,11 +5,22 @@ import gym_novel_gridworlds
 import keyboard
 import numpy as np
 
-KEY_ACTION_DICT = {
+# NovelGridworld-v0
+KEY_ACTION_DICT_v0 = {
     "w": 0,  # Forward
     "a": 1,  # Left
     "d": 2,  # Right
 }
+
+# NovelGridworld-v1
+KEY_ACTION_DICT_v1 = {
+    "w": 0,  # Forward
+    "a": 1,  # Left
+    "d": 2,  # Right
+    "e": 3,  # Break
+}
+
+KEY_ACTION_DICT = KEY_ACTION_DICT_v1
 
 
 def get_action_from_keyboard():
@@ -22,9 +33,12 @@ def get_action_from_keyboard():
             elif key_pressed == "esc":
                 print("You pressed esc, exiting!!")
                 break
+            else:
+                print("You pressed wrong key. Press Esc key to exit, OR:")
+                print("Press a key to play: ", KEY_ACTION_DICT)
 
 
-env = gym.make('NovelGridworld-v0')
+env = gym.make('NovelGridworld-v1')
 obs = env.reset()
 env.render()
 
@@ -35,6 +49,7 @@ for i in range(100):
 
     print("action: ", action, env.action_str[action])
     observation, reward, done, info = env.step(action)
+    # print("inventory_items_quantity: ", env.inventory_items_quantity)
 
     print("Step: " + str(i) + ", reward: ", reward)
     # print("observation: ", observation)

@@ -9,7 +9,7 @@ import numpy as np
 # from novel_world_v0_env import NovelWorldV0Env
 # env = NovelWorldV0Env()
 
-env = gym.make('NovelGridworld-v0')
+env = gym.make('NovelGridworld-v1')
 print("action_space:", env.action_space)
 print("observation_space:", env.observation_space)
 print("observation_space.low:", env.observation_space.low)
@@ -28,7 +28,7 @@ for i in range(50):
     print("observation: ", observation)
     time.sleep(0)
 
-    if (i+1) % 5 == 0:
+    if (i+1) % 10 == 0:
         env.map_size = np.random.randint(low=10, high=20, size=1)[0]
         obs = env.reset()
         print("")

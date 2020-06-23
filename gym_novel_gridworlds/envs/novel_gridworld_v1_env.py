@@ -14,28 +14,31 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 
 
-class NovelGridworldV0Env(gym.Env):
+class NovelGridworldV1Env(gym.Env):
     # metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        # NovelGridworldV0Env attributes
-        self.env_name = 'NovelGridworld-v0'
+        # NovelGridworldV1Env attributes
+        self.env_name = 'NovelGridworld-v1'
         self.map_size = 10
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
         self.agent_facing_str = 'NORTH'
         self.agent_facing_id = self.direction_id[self.agent_facing_str]
-        self.block_in_front = 0  # Air
+        self.block_in_front_str = 'air'
+        self.block_in_front_id = 0  # Air
+        self.block_in_front_location = (0, 0)  # row, column
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
-        self.items = ['wall', 'crafting_table']
+        self.items = ['wall', 'crafting_table', 'tree']
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'wall': 2}  # ID cannot be 0 as air = 0
-        self.items_quantity = {'crafting_table': 1}  # Do not include wall, quantity must be more than  0
+        self.items_quantity = {'crafting_table': 1, 'tree': 5}  # Do not include wall, quantity must be more than  0
+        self.inventory_items_quantity = {}
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
         # Action Space
         # 0=Forward, 1=Left, 2=Right
-        self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right'}
+        self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break'}
         self.action_space = spaces.Discrete(len(self.action_str))
         self.last_action = 0  # last actions executed
         self.step_count = 0  # no. of steps taken
@@ -65,6 +68,7 @@ class NovelGridworldV0Env(gym.Env):
         assert len(self.items_id) == len(self.items_quantity) + 1, "Should be equal, otherwise color might be wrong"
 
         # Variables to reset for each reset:
+        self.inventory_items_quantity = {}
         self.available_locations = []
         self.not_available_locations = []
         self.last_action = 0  # last actions executed
@@ -96,7 +100,9 @@ class NovelGridworldV0Env(gym.Env):
         if self.agent_location not in self.available_locations:
             self.available_locations.append(self.agent_location)
 
+        # Update after each reset
         observation = self.get_lidarSignal()
+        self.update_block_in_front()
 
         return observation
 
@@ -228,36 +234,58 @@ class NovelGridworldV0Env(gym.Env):
 
             # if old_agent_facing_str != self.agent_facing_str:
             #     reward = -1  # If agent turned
+        # Break
+        elif action == 3:
+            self.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if not self.block_in_front_id == 0 and not self.block_in_front_str == 'wall':
+                block_r, block_c = self.block_in_front_location
+                self.map[block_r][block_c] = 0
 
+                self.inventory_items_quantity.setdefault(self.block_in_front_str, 0)
+                self.inventory_items_quantity[self.block_in_front_str] += 1
+
+                if self.block_in_front_str == 'tree':
+                    reward = 10
+
+        # Update after each step
         observation = self.get_lidarSignal()
+        self.update_block_in_front()
 
-        self.find_block_in_front()
         done = False
-        if self.block_in_front == self.items_id['crafting_table']:
+        if 'tree' in self.inventory_items_quantity and self.inventory_items_quantity['tree'] >= 3:
             reward = 50
             done = True
-        # elif self.block_in_front == self.items_id['tree']:
-        #     reward = 0
 
         info = {}
 
+        # Update after each step
         self.step_count += 1
         self.last_reward = reward
         self.last_done = done
 
         return observation, reward, done, info
 
-    def find_block_in_front(self):
+    def update_block_in_front(self):
         r, c = self.agent_location
 
         if self.agent_facing_str == 'NORTH':
-            self.block_in_front = self.map[r - 1][c]
+            self.block_in_front_id = self.map[r - 1][c]
+            self.block_in_front_location = (r - 1, c)
         elif self.agent_facing_str == 'SOUTH':
-            self.block_in_front = self.map[r + 1][c]
+            self.block_in_front_id = self.map[r + 1][c]
+            self.block_in_front_location = (r + 1, c)
         elif self.agent_facing_str == 'WEST':
-            self.block_in_front = self.map[r][c - 1]
+            self.block_in_front_id = self.map[r][c - 1]
+            self.block_in_front_location = (r, c - 1)
         elif self.agent_facing_str == 'EAST':
-            self.block_in_front = self.map[r][c + 1]
+            self.block_in_front_id = self.map[r][c + 1]
+            self.block_in_front_location = (r, c + 1)
+
+        if self.block_in_front_id == 0:
+            self.block_in_front_str = 'air'
+        else:
+            self.block_in_front_str = list(self.items_id.keys())[list(self.items_id.values()).index(self.block_in_front_id)]
 
     def render(self, mode='human'):
 
@@ -285,8 +313,8 @@ class NovelGridworldV0Env(gym.Env):
         # plt.grid()
 
         # legend_elements = [Line2D([0], [0], color='w', label="Agent Facing: " + self.agent_facing_str),
-        #                    Line2D([0], [0], color='w', label="Action: " + self.action_str[self.action]),
-        #                    Line2D([0], [0], color='w', label="Reward: " + str(self.reward))]
+        #                    Line2D([0], [0], color='w', label="Action: " + self.action_str[self.last_action]),
+        #                    Line2D([0], [0], color='w', label="Reward: " + str(self.last_reward))]
         # legend1 = plt.legend(handles=legend_elements, title="Info:", title_fontsize=12,
         #                      bbox_to_anchor=(1.62, 0.7))  # x, y
 
@@ -300,13 +328,25 @@ class NovelGridworldV0Env(gym.Env):
         plt.text(-(self.map_size//2)-0.5, 1.5, info, fontsize=10, bbox=props)
 
         cmap = get_cmap(color_map)
-        legend_elements = [Line2D([0], [0], marker="^", color='w', label='agent', markerfacecolor='w', markersize=12,
+
+        legend_elements = [Line2D([0], [0], color='w', label="ITEMS:"),
+                           Line2D([0], [0], marker="^", color='w', label='agent', markerfacecolor='w', markersize=12,
                                   markeredgewidth=2, markeredgecolor='k')]
         for item in sorted(self.items_id):
             rgba = cmap(self.items_id[item] / len(self.items_id))
             legend_elements.append(
                 Line2D([0], [0], marker="s", color='w', label=item, markerfacecolor=rgba, markersize=16))
-        plt.legend(handles=legend_elements, title="Objects:", title_fontsize=12, bbox_to_anchor=(1.5, 1.02))  # x, y
+
+        if len(self.inventory_items_quantity) == 0:
+            legend_elements.append(Line2D([0], [0], color='w', label="empty INVENTORY"))
+        else:
+            legend_elements.append(Line2D([0], [0], color='w', label="INVENTORY:"))
+            for item in sorted(self.inventory_items_quantity):
+                rgba = cmap(self.items_id[item] / len(self.items_id))
+                legend_elements.append(Line2D([0], [0], marker="s", color='w',
+                                              label=item+': '+str(self.inventory_items_quantity[item]),
+                                              markerfacecolor=rgba, markersize=16))
+        plt.legend(handles=legend_elements, bbox_to_anchor=(1.5, 1.02))  # x, y
         # plt.gca().add_artist(legend1)
 
         plt.tight_layout()

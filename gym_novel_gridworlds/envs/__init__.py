@@ -1,1 +1,2 @@
 from gym_novel_gridworlds.envs.novel_gridworld_v0_env import NovelGridworldV0Env
+from gym_novel_gridworlds.envs.novel_gridworld_v1_env import NovelGridworldV1Env

@@ -11,6 +11,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.common import make_vec_env
 
 env = gym.make('NovelGridworld-v0')
+# env = gym.make('NovelGridworld-v1')
 # multiprocess environment
 # env = make_vec_env('NovelGridworld-v0', n_envs=4)
 check_env(env, warn=True)
@@ -21,5 +22,5 @@ check_env(env, warn=True)
 
 model = PPO2(MlpPolicy, env, verbose=1)
 # model = DQN('MlpPolicy', env, learning_rate=1e-3, prioritized_replay=True, verbose=1)
-model.learn(total_timesteps=10000)
-model.save("ppo_novel_world_v0_10000")
+model.learn(total_timesteps=100000)
+model.save("ppo_novel_gridworld_v0_100000")
