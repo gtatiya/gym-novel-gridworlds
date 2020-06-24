@@ -8,6 +8,12 @@ git clone https://github.com/gtatiya/gym-novel-gridworlds.git
 cd gym-novel-gridworlds
 pip install -e .
 ```
+
+If you prefer, you can install directly from PyPI:
+```
+pip install gym-novel-gridworlds
+```
+
 ## Development Environment
 
 `Python 3.7.4` and following packages were used for development:<br><br>

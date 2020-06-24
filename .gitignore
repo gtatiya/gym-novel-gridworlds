@@ -3,5 +3,9 @@
 .idea
 *~
 
+# Setuptools distribution and build folders.
+/dist/
+/build/
+
 # folders
 results/
