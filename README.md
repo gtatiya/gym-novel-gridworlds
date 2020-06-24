@@ -56,11 +56,11 @@ python enjoy.py -env NovelGridworld-v0 -algo ppo2 -episodes 10
 <tr>
 <td>
 <a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v0">NovelGridworld-v0</a>
-<img src="pics/NovelGridworld-v0.gif" alt="drawing" width="800" height="70"/>
+<img src="pics/NovelGridworld-v0.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
 NovelGridworld-v1<br/>
-<img src="pics/NovelGridworld-v1.gif" alt="drawing" width="800" height="70"/>
+<img src="pics/NovelGridworld-v1.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 </table>
