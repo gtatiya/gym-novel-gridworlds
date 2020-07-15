@@ -1,7 +1,12 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
 *.egg-info
-*.pyc
-.idea
 *~
+
+# IDE files (e.g. Jupyter Notebook, PyCharm)
+.ipynb_checkpoints
+.idea
 
 # Setuptools distribution and build folders.
 /dist/
@@ -9,3 +14,4 @@
 
 # folders
 results/
+models/

@@ -9,7 +9,7 @@ cd gym-novel-gridworlds
 pip install -e .
 ```
 
-If you prefer, you can install directly from PyPI:
+If you prefer, you can install directly from [PyPI](https://pypi.org/project/gym-novel-gridworlds/):
 ```
 pip install gym-novel-gridworlds
 ```
@@ -53,20 +53,60 @@ python enjoy.py -algo algo_name --env env_id
 
 For example, enjoy PPO2 on NovelGridworld-v0 during 10 episodes:
 ```
-python enjoy.py -env NovelGridworld-v0 -algo ppo2 -episodes 10
+python enjoy.py -env NovelGridworld-v0 -episodes 10
 ```
+
+## Play it yourself
+
+Play the game using keyboard interface
+```
+cd tests
+python keyboard_interface.py
+```
+
 
 ## [Environments](https://github.com/gtatiya/gym-novel-gridworlds/wiki#environments)
 
 <table>
+
 <tr>
 <td>
 <a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v0">NovelGridworld-v0</a>
 <img src="pics/NovelGridworld-v0.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
-NovelGridworld-v1<br/>
+<a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v1">NovelGridworld-v1</a>
 <img src="pics/NovelGridworld-v1.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
+
+<tr>
+<td>
+<a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v2">NovelGridworld-v2</a>
+<img src="pics/NovelGridworld-v2.gif" alt="drawing" width="800" height="250"/>
+</td>
+<td>
+<a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v3">NovelGridworld-v3</a>
+<img src="pics/NovelGridworld-v3.gif" alt="drawing" width="800" height="250"/>
+</td>
+</tr>
+
+<tr>
+<td>
+<a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v4">NovelGridworld-v4</a>
+<img src="pics/NovelGridworld-v4.gif" alt="drawing" width="800" height="250"/>
+</td>
+<td>
+<a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v5">NovelGridworld-v5</a>
+<img src="pics/NovelGridworld-v5.gif" alt="drawing" width="800" height="250"/>
+</td>
+</tr>
+
+<tr>
+<td>
+<a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v6">NovelGridworld-v6</a>
+<img src="pics/NovelGridworld-v6.gif" alt="drawing" width="800" height="250"/>
+</td>
+</tr>
+
 </table>

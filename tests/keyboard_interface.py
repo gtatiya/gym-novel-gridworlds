@@ -5,22 +5,13 @@ import gym_novel_gridworlds
 import keyboard
 import numpy as np
 
-# NovelGridworld-v0
-KEY_ACTION_DICT_v0 = {
-    "w": 0,  # Forward
-    "a": 1,  # Left
-    "d": 2,  # Right
-}
+from constant import ENV_KEY
 
-# NovelGridworld-v1
-KEY_ACTION_DICT_v1 = {
-    "w": 0,  # Forward
-    "a": 1,  # Left
-    "d": 2,  # Right
-    "e": 3,  # Break
-}
 
-KEY_ACTION_DICT = KEY_ACTION_DICT_v1
+def print_play_keys(action_str):
+    print("Press a key to play: ")
+    for key, key_id in KEY_ACTION_DICT.items():
+        print(key, ": ", action_str[key_id])
 
 
 def get_action_from_keyboard():
@@ -35,31 +26,42 @@ def get_action_from_keyboard():
                 break
             else:
                 print("You pressed wrong key. Press Esc key to exit, OR:")
-                print("Press a key to play: ", KEY_ACTION_DICT)
+                print_play_keys(env.action_str)
 
 
-env = gym.make('NovelGridworld-v1')
+env_id = 'NovelGridworld-v6'
+env = gym.make(env_id)
+# env.map_size = 8
 obs = env.reset()
 env.render()
 
+KEY_ACTION_DICT = ENV_KEY[env_id]
+
+
 for i in range(100):
     env.render()
-    print("Press a key to play: ", KEY_ACTION_DICT)
+    print_play_keys(env.action_str)
     action = get_action_from_keyboard()  # take action from keyboard
 
     print("action: ", action, env.action_str[action])
     observation, reward, done, info = env.step(action)
-    print("inventory_items_quantity: ", env.inventory_items_quantity)
-    print("items_quantity: ", env.items_quantity)
+    # print("inventory_items_quantity: ", env.inventory_items_quantity)
 
     print("Step: " + str(i) + ", reward: ", reward)
     # print("observation: ", observation)
     time.sleep(0.2)
+    print("")
+
+    if i == 10:
+        # env.remap_action()
+        # print("action_str: ", env.action_str)
+        pass
 
     if done:
         env.render()
         print("Finished after " + str(i) + " timesteps\n")
-        env.map_size = np.random.randint(low=10, high=20, size=1)[0]
-        obs = env.reset()
+        time.sleep(2)
+        # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
+        #obs = env.reset()
 
 env.close()

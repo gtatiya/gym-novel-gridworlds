@@ -3,6 +3,7 @@
 
 import copy
 import math
+import random
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +17,12 @@ from gym.utils import seeding
 
 class NovelGridworldV0Env(gym.Env):
     # metadata = {'render.modes': ['human']}
+    """
+    Goal: Get in front of the crafting table
+    State: lidar sensor (5 beams)
+    Action: {0: 'Forward', 1: 'Left', 2: 'Right'}
+
+    """
 
     def __init__(self):
         # NovelGridworldV0Env attributes
@@ -34,7 +41,6 @@ class NovelGridworldV0Env(gym.Env):
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
         # Action Space
-        # 0=Forward, 1=Left, 2=Right
         self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right'}
         self.action_space = spaces.Discrete(len(self.action_str))
         self.last_action = 0  # last actions executed
@@ -130,6 +136,7 @@ class NovelGridworldV0Env(gym.Env):
         For each bean store distance (beam_range) for each item if item is found otherwise self.max_beam_range
         and return lidar_signals
         """
+
         direction_radian = {'NORTH': np.pi, 'SOUTH': 0, 'WEST': 3 * np.pi / 2, 'EAST': np.pi / 2}
 
         # All directions
@@ -181,29 +188,25 @@ class NovelGridworldV0Env(gym.Env):
 
     def step(self, action):
         """
-        Actions: 0=Forward, 1=Left, 2=Right
+        Actions: {0: 'Forward', 1: 'Left', 2: 'Right'}
         """
+
         self.last_action = action
         r, c = self.agent_location
-        old_agent_location = copy.deepcopy(self.agent_location)
-        old_agent_facing_str = copy.deepcopy(self.agent_facing_str)
 
-        reward = -1  # If agent do not move/turn
+        reward = -1  # default reward
         # Forward
-        if action == 0:
+        if action == list(self.action_str.keys())[list(self.action_str.values()).index('Forward')]:
             if self.agent_facing_str == 'NORTH' and self.map[r - 1][c] == 0:
-                self.agent_location = [r - 1, c]
+                self.agent_location = (r - 1, c)
             elif self.agent_facing_str == 'SOUTH' and self.map[r + 1][c] == 0:
-                self.agent_location = [r + 1, c]
+                self.agent_location = (r + 1, c)
             elif self.agent_facing_str == 'WEST' and self.map[r][c - 1] == 0:
-                self.agent_location = [r, c - 1]
+                self.agent_location = (r, c - 1)
             elif self.agent_facing_str == 'EAST' and self.map[r][c + 1] == 0:
-                self.agent_location = [r, c + 1]
-
-            # if old_agent_location != self.agent_location:
-            #     reward = -1  # If agent moved
+                self.agent_location = (r, c + 1)
         # Left
-        elif action == 1:
+        elif action == action == list(self.action_str.keys())[list(self.action_str.values()).index('Left')]:
             if self.agent_facing_str == 'NORTH':
                 self.set_agent_facing('WEST')
             elif self.agent_facing_str == 'SOUTH':
@@ -212,11 +215,8 @@ class NovelGridworldV0Env(gym.Env):
                 self.set_agent_facing('SOUTH')
             elif self.agent_facing_str == 'EAST':
                 self.set_agent_facing('NORTH')
-
-            # if old_agent_facing_str != self.agent_facing_str:
-            #     reward = -1  # If agent turned
         # Right
-        elif action == 2:
+        elif action == list(self.action_str.keys())[list(self.action_str.values()).index('Right')]:
             if self.agent_facing_str == 'NORTH':
                 self.set_agent_facing('EAST')
             elif self.agent_facing_str == 'SOUTH':
@@ -225,9 +225,6 @@ class NovelGridworldV0Env(gym.Env):
                 self.set_agent_facing('NORTH')
             elif self.agent_facing_str == 'EAST':
                 self.set_agent_facing('SOUTH')
-
-            # if old_agent_facing_str != self.agent_facing_str:
-            #     reward = -1  # If agent turned
 
         observation = self.get_lidarSignal()
 
@@ -236,8 +233,6 @@ class NovelGridworldV0Env(gym.Env):
         if self.block_in_front == self.items_id['crafting_table']:
             reward = 50
             done = True
-        # elif self.block_in_front == self.items_id['tree']:
-        #     reward = 0
 
         info = {}
 
@@ -258,6 +253,22 @@ class NovelGridworldV0Env(gym.Env):
             self.block_in_front = self.map[r][c - 1]
         elif self.agent_facing_str == 'EAST':
             self.block_in_front = self.map[r][c + 1]
+
+    def remap_action(self):
+        """
+        Remap actions randomly
+
+        """
+
+        while True:
+            actions = list(self.action_str.values())
+            random.shuffle(actions)
+            action_str_new = dict([(i, action) for i, action in enumerate(actions)])
+
+            if self.action_str != action_str_new:
+                self.action_str = action_str_new
+                print("New remapped actions: ", self.action_str)
+                break
 
     def render(self, mode='human'):
 
