@@ -48,7 +48,7 @@ env.close()
 
 If the trained agent exists, then you can see it in action using:
 ```
-python enjoy.py -algo algo_name --env env_id
+python enjoy.py -env <env id> -episodes <number of episodes>
 ```
 
 For example, enjoy PPO2 on NovelGridworld-v0 during 10 episodes:

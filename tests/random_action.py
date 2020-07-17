@@ -9,7 +9,7 @@ import numpy as np
 # from novel_world_v0_env import NovelWorldV0Env
 # env = NovelWorldV0Env()
 
-env = gym.make('NovelGridworld-v1')
+env = gym.make('NovelGridworld-v0')
 print("action_space:", env.action_space)
 print("observation_space:", env.observation_space)
 print("observation_space.low:", env.observation_space.low)
