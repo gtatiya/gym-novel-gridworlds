@@ -17,9 +17,10 @@ from gym.utils import seeding
 class NovelGridworldV5Env(gym.Env):
     # metadata = {'render.modes': ['human']}
     """
-    Goal: Place tree_tap and extract rubber
+    Goal: Craft 1 pogo_stick
     State: lidar sensor (8 beams) + inventory_items_quantity
-    Action: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Place_tree_tap_Extract_rubber'}
+    Action: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap_Extract_rubber',
+            5: 'Craft_plank', 6: 'Craft_stick', 7: 'Craft_tree_tap', 8: 'Craft_pogo_stick'}
 
     """
 
@@ -36,21 +37,21 @@ class NovelGridworldV5Env(gym.Env):
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
-        self.items = ['wall', 'crafting_table', 'tree', 'pogo_stick', 'stick', 'plank', 'rubber', 'log', 'tree_tap']
-        self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'tree': 2, ...}  # ID can't be 0 as air=0
+        self.items = ['wall', 'crafting_table', 'tree_log', 'pogo_stick', 'stick', 'plank', 'rubber', 'tree_tap']
+        self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
         # items_quantity when the episode starts, do not include wall, quantity must be more than  0
-        self.items_quantity = {'crafting_table': 1, 'tree': 2}
+        self.items_quantity = {'crafting_table': 1, 'tree_log': 5}
         self.inventory_items_quantity = {item: 0 for item in self.items}
-        self.inventory_items_quantity['tree_tap'] = 1  # to enable placing tree_tap and extracting rubber directly
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
         # Action Space
-        self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Place_tree_tap_Extract_rubber'}
+        self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap_Extract_rubber',
+                           5: 'Craft_plank', 6: 'Craft_stick', 7: 'Craft_tree_tap', 8: 'Craft_pogo_stick'}
         self.action_space = spaces.Discrete(len(self.action_str))
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
-                        'plank': {'input': {'log': 1}, 'output': {'plank': 4}},
+                        'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}},
                         'tree_tap': {'input': {'plank': 5, 'stick': 1}, 'output': {'tree_tap': 1}},
                         'crafting_table': {'input': {'plank': 4}, 'output': {'crafting_table': 1}}}
         self.last_action = 0  # last actions executed
@@ -58,10 +59,12 @@ class NovelGridworldV5Env(gym.Env):
 
         # Observation Space
         self.num_beams = 8
-        self.max_beam_range = int(math.sqrt(2 * (self.map_size - 2) ** 2))  # Hypotenuse of a square
-        low = np.array([1] * (len(self.items_id) * self.num_beams) + [0] * len(self.inventory_items_quantity))
-        high = np.array([self.max_beam_range] * (len(self.items_id) * self.num_beams) + [40] * len(
-            self.inventory_items_quantity))  # maximum 40 stick can be crafted (5 log -> 20 plank -> 40 stick)
+        self.max_beam_range = 40
+        self.items_lidar = ['wall', 'crafting_table', 'tree_log']
+        self.items_id_lidar = self.set_items_id(self.items_lidar)
+        low = np.array([0] * (len(self.items_lidar) * self.num_beams) + [0] * len(self.inventory_items_quantity))
+        high = np.array([self.max_beam_range] * (len(self.items_lidar) * self.num_beams) + [40] * len(
+            self.inventory_items_quantity))  # maximum 40 stick can be crafted (5 tree_log -> 20 plank -> 40 stick)
         self.observation_space = spaces.Box(low, high, dtype=int)
 
         # Reward
@@ -80,7 +83,7 @@ class NovelGridworldV5Env(gym.Env):
             self.inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
             self.available_locations = copy.deepcopy(self.env.available_locations)
             self.not_available_locations = copy.deepcopy(self.env.not_available_locations)
-            self.last_action = 0  # last actions executed, 0 because action space changed from v4
+            self.last_action = copy.deepcopy(self.env.last_action)  # last actions executed
             self.step_count = copy.deepcopy(self.env.step_count)  # no. of steps taken
             self.last_reward = copy.deepcopy(self.env.last_reward)  # last received reward
             self.last_done = False  # last done
@@ -103,7 +106,6 @@ class NovelGridworldV5Env(gym.Env):
 
         # Variables to reset for each reset:
         self.inventory_items_quantity = {item: 0 for item in self.items}
-        self.inventory_items_quantity['tree_tap'] = 1  # to placing and extracting rubber tree_tap directly
         self.available_locations = []
         self.not_available_locations = []
         self.last_action = 0  # last actions executed
@@ -167,38 +169,37 @@ class NovelGridworldV5Env(gym.Env):
 
     def get_lidarSignal(self):
         """
-        Send several beans (self.num_beams) at equally spaced angles in front of agent
-        For each bean store distance (beam_range) for each item if item is found otherwise self.max_beam_range
+        Send several beans (self.num_beams) at equally spaced angles in 360 degrees in front of agent within a range
+        For each bean store distance (beam_range) for each item in items_id_lidar if item is found otherwise 0
         and return lidar_signals
         """
 
         direction_radian = {'NORTH': np.pi, 'SOUTH': 0, 'WEST': 3 * np.pi / 2, 'EAST': np.pi / 2}
 
-        # All directions
-        angles_list = np.linspace(direction_radian[self.agent_facing_str] - np.pi / 2,
-                                  direction_radian[self.agent_facing_str] + np.pi / 2, self.num_beams)
+        # Shoot beams in 360 degrees in front of agent
+        angles_list = np.linspace(direction_radian[self.agent_facing_str] - np.pi,
+                                  direction_radian[self.agent_facing_str] + np.pi,
+                                  self.num_beams + 1)[:-1]  # 0 and 360 degree is same, so removing 360
 
         lidar_signals = []
+        r, c = self.agent_location
         for angle in angles_list:
             x_ratio, y_ratio = np.round(np.cos(angle), 2), np.round((np.sin(angle)), 2)
-
-            beam_range = 1
-            # beam_signal = np.zeros(len(self.items_id), dtype=int)
-            beam_signal = np.full(fill_value=self.max_beam_range, shape=len(self.items_id), dtype=int)
+            beam_signal = np.zeros(len(self.items_id_lidar), dtype=int)
 
             # Keep sending longer beams until hit an object or wall
-            while True:
-                r, c = self.agent_location
+            for beam_range in range(1, self.max_beam_range + 1):
                 r_obj = r + np.round(beam_range * x_ratio)
                 c_obj = c + np.round(beam_range * y_ratio)
                 obj_id_rc = self.map[int(r_obj)][int(c_obj)]
 
                 # If bean hit an object or wall
                 if obj_id_rc != 0:
-                    beam_signal[obj_id_rc - 1] = beam_range
+                    item = list(self.items_id.keys())[list(self.items_id.values()).index(obj_id_rc)]
+                    if item in self.items_id_lidar:
+                        obj_id_rc = self.items_id_lidar[item]
+                        beam_signal[obj_id_rc - 1] = beam_range
                     break
-
-                beam_range += 1
 
             lidar_signals.extend(beam_signal)
 
@@ -215,11 +216,11 @@ class NovelGridworldV5Env(gym.Env):
 
     def set_items_id(self, items):
 
-        self.items_id = {}
+        items_id = {}
         for item in sorted(items):
-            self.items_id[item] = len(self.items_id) + 1
+            items_id[item] = len(items_id) + 1
 
-        return self.items_id
+        return items_id
 
     def get_observation(self):
         """
@@ -235,7 +236,8 @@ class NovelGridworldV5Env(gym.Env):
 
     def step(self, action):
         """
-        Actions: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Craft_tree_tap', 4: 'Craft_pogo_stick'}
+        Actions: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap_Extract_rubber',
+                  5: 'Craft_plank', 6: 'Craft_stick', 7: 'Craft_tree_tap', 8: 'Craft_pogo_stick'}
         """
 
         self.last_action = action
@@ -272,8 +274,21 @@ class NovelGridworldV5Env(gym.Env):
                 self.set_agent_facing('NORTH')
             elif self.agent_facing_str == 'EAST':
                 self.set_agent_facing('SOUTH')
-        # Place_tree_tap_Extract_rubber
+        # Break
         elif action == 3:
+            self.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if not self.block_in_front_id == 0 and not self.block_in_front_str == 'wall':
+                block_r, block_c = self.block_in_front_location
+                self.map[block_r][block_c] = 0
+
+                if self.block_in_front_str == 'tree_log':
+                    reward = 10
+                else:
+                    reward = -10  # break something else
+                self.inventory_items_quantity[self.block_in_front_str] += 1
+        # Place_tree_tap_Extract_rubber
+        elif action == 4:
             # Designed to place only one tree_tap and only next to a tree, which is most optimal
 
             reward = -1  # default reward to Place_tree_tap_Extract_rubber in a wrong way
@@ -284,7 +299,7 @@ class NovelGridworldV5Env(gym.Env):
                 locations.append((result[0][i], result[1][i]))
 
             # Make sure that block_in_front_location is next to a tree
-            block_in_front_next_to_tree = self.is_block_in_front_next_to('tree')
+            block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
             r, c = self.block_in_front_location
 
             # if tree_tap is never placed and tree_tap >= 1, place it only next to a tree and extract 1 rubber
@@ -302,13 +317,29 @@ class NovelGridworldV5Env(gym.Env):
                     reward = 15
                 else:
                     print("1 tree_tap already placed correctly OR not placed next to a tree")
+        # Craft_plank
+        elif action == 5:
+            item_to_craft = 'plank'
+            reward = self.craft(item_to_craft)
+        # Craft_stick
+        elif action == 6:
+            item_to_craft = 'stick'
+            reward = self.craft(item_to_craft)
+        # Craft_tree_tap
+        elif action == 7:
+            item_to_craft = 'tree_tap'
+            reward = self.craft(item_to_craft)
+        # Craft_pogo_stick
+        elif action == 8:
+            item_to_craft = 'pogo_stick'
+            reward = self.craft(item_to_craft)
 
         # Update after each step
         observation = self.get_observation()
         self.update_block_in_front()
 
         done = False
-        if self.inventory_items_quantity['rubber'] >= 1:
+        if self.inventory_items_quantity['pogo_stick'] >= 1:
             reward = 50
             done = True
 
@@ -378,7 +409,8 @@ class NovelGridworldV5Env(gym.Env):
         # Check if there are enough ingredients in the inventory
         have_all_ingredients = {}
         for item in self.recipes[item_to_craft]['input']:
-            if self.inventory_items_quantity[item] >= self.recipes[item_to_craft]['input'][item]:
+            if item in self.inventory_items_quantity and self.inventory_items_quantity[item] >= \
+                    self.recipes[item_to_craft]['input'][item]:
                 have_all_ingredients[item] = True
             else:
                 have_all_ingredients[item] = False
@@ -388,20 +420,18 @@ class NovelGridworldV5Env(gym.Env):
             print("You don't have:")
             for item in have_all_ingredients:
                 if not have_all_ingredients[item]:
-                    print(str(self.recipes[item_to_craft]['input'][item]) + ' ' + item)
                     pass
+                    print(str(self.recipes[item_to_craft]['input'][item]) + ' ' + item)
         # Craft
         else:
             reward = 10  # default reward to craft in a good way
 
             # if the agent craft stick before plank < 8
             if item_to_craft == 'stick' and self.inventory_items_quantity['plank'] < 8:
-                print('Don\'t craft stick before 8 plank ...')
-                reward = -1
+                print('Dont craft stick before 8 plank ...')
             # if the agent craft tree_tap before stick < 8
             elif item_to_craft == 'tree_tap' and self.inventory_items_quantity['stick'] < 8:
-                print('Don\'t craft tree_tap before 8 stick ...')
-                reward = -1
+                print('Dont craft tree_tap before 8 stick ...')
 
             # Reduce ingredients from the inventory
             for item in self.recipes[item_to_craft]['input']:
@@ -439,26 +469,23 @@ class NovelGridworldV5Env(gym.Env):
         # plt.colorbar()
         # plt.grid()
 
-        # legend_elements = [Line2D([0], [0], color='w', label="Agent Facing: " + self.agent_facing_str),
-        #                    Line2D([0], [0], color='w', label="Action: " + self.action_str[self.last_action]),
-        #                    Line2D([0], [0], color='w', label="Reward: " + str(self.last_reward))]
-        # legend1 = plt.legend(handles=legend_elements, title="Info:", title_fontsize=12,
-        #                      bbox_to_anchor=(1.62, 0.7))  # x, y
-
         info = '\n'.join(["               Info:             ",
-                          "Env: " + self.env_name,
                           "Steps: " + str(self.step_count),
                           "Agent Facing: " + self.agent_facing_str,
                           "Action: " + self.action_str[self.last_action],
                           "Reward: " + str(self.last_reward),
                           "Done: " + str(self.last_done)])
         props = dict(boxstyle='round', facecolor='w', alpha=0.2)
-        plt.text(-(self.map_size//2)-0.5, 1.5, info, fontsize=10, bbox=props)
+        plt.text(-(self.map_size // 2) - 0.5, 2.25, info, fontsize=10, bbox=props)  # x, y
 
         if self.last_done:
             you_win = "YOU WIN "+self.env_name+"!!!"
             props = dict(boxstyle='round', facecolor='w', alpha=1)
             plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
+            if self.inventory_items_quantity['pogo_stick'] >= 1:
+                you_win = "YOU CRAFTED POGO_STICK!!!"
+                props = dict(boxstyle='round', facecolor='w', alpha=1)
+                plt.text(0 - 0.1, (self.map_size // 2) + 1, you_win, fontsize=18, bbox=props)
 
         cmap = get_cmap(color_map)
 
@@ -470,8 +497,7 @@ class NovelGridworldV5Env(gym.Env):
             legend_elements.append(Line2D([0], [0], marker="s", color='w',
                                           label=item + ': ' + str(self.inventory_items_quantity[item]),
                                           markerfacecolor=rgba, markersize=16))
-        plt.legend(handles=legend_elements, bbox_to_anchor=(1.5, 1.02))  # x, y
-        # plt.gca().add_artist(legend1)
+        plt.legend(handles=legend_elements, bbox_to_anchor=(1.55, 1.02))  # x, y
 
         plt.tight_layout()
         plt.pause(0.01)

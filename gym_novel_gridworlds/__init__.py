@@ -29,8 +29,3 @@ register(
     id='NovelGridworld-v5',
     entry_point='gym_novel_gridworlds.envs:NovelGridworldV5Env',
 )
-
-register(
-    id='NovelGridworld-v6',
-    entry_point='gym_novel_gridworlds.envs:NovelGridworldV6Env',
-)

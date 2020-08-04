@@ -11,29 +11,23 @@ ENV_KEY = {
         "e": 3,  # Break
     },
     'NovelGridworld-v2': {
-        "w": 0,  # Forward
-        "a": 1,  # Left
-        "d": 2,  # Right
-        "e": 3,  # Break
-    },
-    'NovelGridworld-v3': {
         "1": 0,  # Craft_plank
         "2": 1,  # Craft_stick
     },
-    'NovelGridworld-v4': {
+    'NovelGridworld-v3': {
         "w": 0,  # Forward
         "a": 1,  # Left
         "d": 2,  # Right
         "3": 3,  # Craft_tree_tap
         "4": 4,  # Craft_pogo_stick
     },
-    'NovelGridworld-v5': {
+    'NovelGridworld-v4': {
         "w": 0,  # Forward
         "a": 1,  # Left
         "d": 2,  # Right
         "z": 3,  # Place_tree_tap_Extract_rubber
     },
-    'NovelGridworld-v6': {
+    'NovelGridworld-v5': {
         "w": 0,  # Forward
         "a": 1,  # Left
         "d": 2,  # Right

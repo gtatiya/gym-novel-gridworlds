@@ -25,7 +25,7 @@ Generate Expert Trajectories from a model
 Generate Expert Trajectories from a human expert player
 """
 
-env_id = 'NovelGridworld-v5'
+env_id = 'NovelGridworld-v3'
 env = gym.make(env_id)
 
 KEY_ACTION_DICT = ENV_KEY[env_id]

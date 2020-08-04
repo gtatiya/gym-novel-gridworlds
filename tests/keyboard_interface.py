@@ -1,9 +1,11 @@
+import os
 import time
 
 import gym
 import gym_novel_gridworlds
 import keyboard
 import numpy as np
+import matplotlib.image as mpimg
 
 from constant import ENV_KEY
 
@@ -29,11 +31,22 @@ def get_action_from_keyboard():
                 print_play_keys(env.action_str)
 
 
-env_id = 'NovelGridworld-v6'
+def fix_item_location(item, location):
+    result = np.where(env.map == env.items_id[item])
+    if len(result) > 0:
+        r, c = result[0][0], result[1][0]
+        env.map[r][c] = 0
+        env.map[location[0]][location[1]] = env.items_id[item]
+    else:
+        env.map[location[0]][location[1]] = env.items_id[item]
+
+
+env_id = 'NovelGridworld-v5'
 env = gym.make(env_id)
 # env.map_size = 8
 obs = env.reset()
 env.render()
+# fix_item_location('crafting_table', (3, 2))
 
 KEY_ACTION_DICT = ENV_KEY[env_id]
 
@@ -46,9 +59,10 @@ for i in range(100):
     print("action: ", action, env.action_str[action])
     observation, reward, done, info = env.step(action)
     # print("inventory_items_quantity: ", env.inventory_items_quantity)
+    print("items_id: ", env.items_id)
 
     print("Step: " + str(i) + ", reward: ", reward)
-    # print("observation: ", observation)
+    print("observation: ", len(observation), observation)
     time.sleep(0.2)
     print("")
 
@@ -62,6 +76,7 @@ for i in range(100):
         print("Finished after " + str(i) + " timesteps\n")
         time.sleep(2)
         # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
-        #obs = env.reset()
+        observation = env.reset()
+        # fix_item_location('crafting_table', (3, 2))
 
 env.close()

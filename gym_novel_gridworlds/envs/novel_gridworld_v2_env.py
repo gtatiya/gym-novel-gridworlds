@@ -17,23 +17,16 @@ from gym.utils import seeding
 class NovelGridworldV2Env(gym.Env):
     # metadata = {'render.modes': ['human']}
     """
-    Goal: Break 3 trees
+    Goal: Craft 8 plank and 8 stick
     State: lidar sensor (8 beams) + inventory_items_quantity
-    Action: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break'}
+    Action: {0: 'Craft_plank', 1: 'Craft_stick'}
 
-    Task of this env is same as NovelGridworld-v1, but it is compatible with all the items for pogo-stick task
-    Changes to make compatible:
-    Add: self.items = ['wall', 'crafting_table', 'tree', 'pogo_stick', 'stick', 'plank', 'rubber', 'log', 'tree_tap']
-    Remove: assert len(self.items_id) == len(self.items_quantity) + 1, "Should be equal, otherwise color might be wrong"
-    Add: agent breaks crafting table, so penalizing agent for breaking anything else
-    Add: breaking tree gives log, instead of tree
-    Add: episode ends when log >= 3
-    Add: New state space - lidar sensor + inventory_items_quantity
     """
 
-    def __init__(self):
+    def __init__(self, env=None):
         # NovelGridworldV2Env attributes
         self.env_name = 'NovelGridworld-v2'
+        self.env = env  # env to restore in reset
         self.map_size = 10
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
@@ -43,26 +36,34 @@ class NovelGridworldV2Env(gym.Env):
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
-        self.items = ['wall', 'crafting_table', 'tree', 'pogo_stick', 'stick', 'plank', 'rubber', 'log', 'tree_tap']
-        self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'tree': 2, ...}  # ID can't be 0 as air=0
+        self.items = ['wall', 'crafting_table', 'tree_log', 'pogo_stick', 'stick', 'plank', 'rubber', 'tree_tap']
+        self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
         # items_quantity when the episode starts, do not include wall, quantity must be more than  0
-        self.items_quantity = {'crafting_table': 1, 'tree': 5}
+        self.items_quantity = {'crafting_table': 1, 'tree_log': 2}
         self.inventory_items_quantity = {item: 0 for item in self.items}
+        self.inventory_items_quantity['tree_log'] = 3  # to enable crafting 8 plank and 8 stick directly
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
         # Action Space
-        self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break'}
+        self.action_str = {0: 'Craft_plank', 1: 'Craft_stick'}
         self.action_space = spaces.Discrete(len(self.action_str))
+        self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
+                        'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
+                        'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}},
+                        'tree_tap': {'input': {'plank': 5, 'stick': 1}, 'output': {'tree_tap': 1}},
+                        'crafting_table': {'input': {'plank': 4}, 'output': {'crafting_table': 1}}}
         self.last_action = 0  # last actions executed
         self.step_count = 0  # no. of steps taken
 
         # Observation Space
         self.num_beams = 8
-        self.max_beam_range = int(math.sqrt(2 * (self.map_size - 2) ** 2))  # Hypotenuse of a square
-        low = np.array([1] * (len(self.items_id) * self.num_beams) + [0] * len(self.inventory_items_quantity))
-        high = np.array([self.max_beam_range] * (len(self.items_id) * self.num_beams) + [40] * len(
-            self.inventory_items_quantity))  # maximum 40 stick can be crafted (5 log -> 20 plank -> 40 stick)
+        self.max_beam_range = 40
+        self.items_lidar = ['wall', 'crafting_table', 'tree_log']
+        self.items_id_lidar = self.set_items_id(self.items_lidar)
+        low = np.array([0] * (len(self.items_lidar) * self.num_beams) + [0] * len(self.inventory_items_quantity))
+        high = np.array([self.max_beam_range] * (len(self.items_lidar) * self.num_beams) + [40] * len(
+            self.inventory_items_quantity))  # maximum 40 stick can be crafted (5 tree_log -> 20 plank -> 40 stick)
         self.observation_space = spaces.Box(low, high, dtype=int)
 
         # Reward
@@ -71,6 +72,29 @@ class NovelGridworldV2Env(gym.Env):
         self.last_done = False  # last done
 
     def reset(self, map_size=None, items_id=None, items_quantity=None):
+
+        print("RESETTING " + self.env_name + " ...")
+        if self.env is not None:
+            print("RESTORING "+self.env_name+" ...")
+            self.map_size = copy.deepcopy(self.env.map_size)
+            self.items_id = copy.deepcopy(self.env.items_id)
+            self.items_quantity = copy.deepcopy(self.env.items_quantity)
+            self.inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
+            self.available_locations = copy.deepcopy(self.env.available_locations)
+            self.not_available_locations = copy.deepcopy(self.env.not_available_locations)
+            self.last_action = copy.deepcopy(self.env.last_action)  # last actions executed
+            self.step_count = copy.deepcopy(self.env.step_count)  # no. of steps taken
+            self.last_reward = copy.deepcopy(self.env.last_reward)  # last received reward
+            self.last_done = False  # last done
+            self.map = copy.deepcopy(self.env.map)
+            self.agent_location = copy.deepcopy(self.env.agent_location)
+            self.agent_facing_str = copy.deepcopy(self.env.agent_facing_str)
+            self.agent_facing_id = copy.deepcopy(self.env.agent_facing_id)
+
+            observation = self.get_observation()
+            self.update_block_in_front()
+
+            return observation
 
         if map_size is not None:
             self.map_size = map_size
@@ -81,6 +105,7 @@ class NovelGridworldV2Env(gym.Env):
 
         # Variables to reset for each reset:
         self.inventory_items_quantity = {item: 0 for item in self.items}
+        self.inventory_items_quantity['tree_log'] = 3  # to enable crafting 8 plank and 8 stick directly
         self.available_locations = []
         self.not_available_locations = []
         self.last_action = 0  # last actions executed
@@ -144,37 +169,37 @@ class NovelGridworldV2Env(gym.Env):
 
     def get_lidarSignal(self):
         """
-        Send several beans (self.num_beams) at equally spaced angles in front of agent
-        For each bean store distance (beam_range) for each item if item is found otherwise self.max_beam_range
+        Send several beans (self.num_beams) at equally spaced angles in 360 degrees in front of agent within a range
+        For each bean store distance (beam_range) for each item in items_id_lidar if item is found otherwise 0
         and return lidar_signals
         """
+
         direction_radian = {'NORTH': np.pi, 'SOUTH': 0, 'WEST': 3 * np.pi / 2, 'EAST': np.pi / 2}
 
-        # All directions
-        angles_list = np.linspace(direction_radian[self.agent_facing_str] - np.pi / 2,
-                                  direction_radian[self.agent_facing_str] + np.pi / 2, self.num_beams)
+        # Shoot beams in 360 degrees in front of agent
+        angles_list = np.linspace(direction_radian[self.agent_facing_str] - np.pi,
+                                  direction_radian[self.agent_facing_str] + np.pi,
+                                  self.num_beams + 1)[:-1]  # 0 and 360 degree is same, so removing 360
 
         lidar_signals = []
+        r, c = self.agent_location
         for angle in angles_list:
             x_ratio, y_ratio = np.round(np.cos(angle), 2), np.round((np.sin(angle)), 2)
-
-            beam_range = 1
-            # beam_signal = np.zeros(len(self.items_id), dtype=int)
-            beam_signal = np.full(fill_value=self.max_beam_range, shape=len(self.items_id), dtype=int)
+            beam_signal = np.zeros(len(self.items_id_lidar), dtype=int)
 
             # Keep sending longer beams until hit an object or wall
-            while True:
-                r, c = self.agent_location
+            for beam_range in range(1, self.max_beam_range+1):
                 r_obj = r + np.round(beam_range * x_ratio)
                 c_obj = c + np.round(beam_range * y_ratio)
                 obj_id_rc = self.map[int(r_obj)][int(c_obj)]
 
                 # If bean hit an object or wall
                 if obj_id_rc != 0:
-                    beam_signal[obj_id_rc - 1] = beam_range
+                    item = list(self.items_id.keys())[list(self.items_id.values()).index(obj_id_rc)]
+                    if item in self.items_id_lidar:
+                        obj_id_rc = self.items_id_lidar[item]
+                        beam_signal[obj_id_rc - 1] = beam_range
                     break
-
-                beam_range += 1
 
             lidar_signals.extend(beam_signal)
 
@@ -191,11 +216,11 @@ class NovelGridworldV2Env(gym.Env):
 
     def set_items_id(self, items):
 
-        self.items_id = {}
+        items_id = {}
         for item in sorted(items):
-            self.items_id[item] = len(self.items_id) + 1
+            items_id[item] = len(items_id) + 1
 
-        return self.items_id
+        return items_id
 
     def get_observation(self):
         """
@@ -211,65 +236,32 @@ class NovelGridworldV2Env(gym.Env):
 
     def step(self, action):
         """
-        Actions: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break'}
+        Actions: {0: 'Craft_plank', 1: 'Craft_stick'}
         """
 
         self.last_action = action
         r, c = self.agent_location
 
         reward = -1  # default reward
-        # Forward
+        # Craft_plank
         if action == 0:
-            if self.agent_facing_str == 'NORTH' and self.map[r - 1][c] == 0:
-                self.agent_location = (r - 1, c)
-            elif self.agent_facing_str == 'SOUTH' and self.map[r + 1][c] == 0:
-                self.agent_location = (r + 1, c)
-            elif self.agent_facing_str == 'WEST' and self.map[r][c - 1] == 0:
-                self.agent_location = (r, c - 1)
-            elif self.agent_facing_str == 'EAST' and self.map[r][c + 1] == 0:
-                self.agent_location = (r, c + 1)
-        # Left
+            item_to_craft = 'plank'
+            reward = self.craft(item_to_craft)
+        # Craft_stick
         elif action == 1:
-            if self.agent_facing_str == 'NORTH':
-                self.set_agent_facing('WEST')
-            elif self.agent_facing_str == 'SOUTH':
-                self.set_agent_facing('EAST')
-            elif self.agent_facing_str == 'WEST':
-                self.set_agent_facing('SOUTH')
-            elif self.agent_facing_str == 'EAST':
-                self.set_agent_facing('NORTH')
-        # Right
-        elif action == 2:
-            if self.agent_facing_str == 'NORTH':
-                self.set_agent_facing('EAST')
-            elif self.agent_facing_str == 'SOUTH':
-                self.set_agent_facing('WEST')
-            elif self.agent_facing_str == 'WEST':
-                self.set_agent_facing('NORTH')
-            elif self.agent_facing_str == 'EAST':
-                self.set_agent_facing('SOUTH')
-        # Break
-        elif action == 3:
-            self.update_block_in_front()
-            # If block in front is not air and wall, place the block in front in inventory
-            if not self.block_in_front_id == 0 and not self.block_in_front_str == 'wall':
-                block_r, block_c = self.block_in_front_location
-                self.map[block_r][block_c] = 0
-
-                if self.block_in_front_str == 'tree':
-                    self.inventory_items_quantity['log'] += 1
-                    reward = 10
-                else:
-                    self.inventory_items_quantity[self.block_in_front_str] += 1
-                    reward = -10  # break something else
+            item_to_craft = 'stick'
+            reward = self.craft(item_to_craft)
 
         # Update after each step
         observation = self.get_observation()
         self.update_block_in_front()
 
         done = False
-        if self.inventory_items_quantity['log'] >= 3:
+        if self.inventory_items_quantity['plank'] >= 8 and self.inventory_items_quantity['stick'] >= 8:
             reward = 50
+            done = True
+        elif not self.has_ingredients_to_craft('plank') and not self.has_ingredients_to_craft('stick'):
+            print("Sorry you can't craft anything")
             done = True
 
         info = {}
@@ -300,8 +292,54 @@ class NovelGridworldV2Env(gym.Env):
         if self.block_in_front_id == 0:
             self.block_in_front_str = 'air'
         else:
-            self.block_in_front_str = list(self.items_id.keys())[
-                list(self.items_id.values()).index(self.block_in_front_id)]
+            self.block_in_front_str = list(self.items_id.keys())[list(self.items_id.values()).index(self.block_in_front_id)]
+
+    def craft(self, item_to_craft):
+
+        reward = -1  # default reward to craft in a wrong way
+
+        have_all_ingredients = {}
+        for item in self.recipes[item_to_craft]['input']:
+            if self.inventory_items_quantity[item] >= self.recipes[item_to_craft]['input'][item]:
+                have_all_ingredients[item] = True
+            else:
+                have_all_ingredients[item] = False
+
+        if False in have_all_ingredients.values():
+            # print("You don't have:")
+            for item in have_all_ingredients:
+                if not have_all_ingredients[item]:
+                    # print(str(self.recipes[item_to_craft]['input'][item]) + ' ' + item)
+                    pass
+        else:
+            for item in self.recipes[item_to_craft]['input']:
+                self.inventory_items_quantity[item] -= self.recipes[item_to_craft]['input'][item]
+            self.inventory_items_quantity[item_to_craft] += self.recipes[item_to_craft]['output'][item_to_craft]
+
+            # if the agent craft stick before plank < 8
+            if item_to_craft == 'stick' and self.inventory_items_quantity['plank'] < 8:
+                # print('Don\'t craft stick before 8 plank ...')
+                pass
+            else:
+                reward = 10
+
+        return reward
+
+    def has_ingredients_to_craft(self, item_to_craft):
+
+        # Check if there are enough ingredients in the inventory
+        have_all_ingredients = {}
+        for item in self.recipes[item_to_craft]['input']:
+            if self.inventory_items_quantity[item] >= self.recipes[item_to_craft]['input'][item]:
+                have_all_ingredients[item] = True
+            else:
+                have_all_ingredients[item] = False
+
+        # If there is not enough ingredients in the inventory
+        if False in have_all_ingredients.values():
+            return False
+        else:
+            return True
 
     def render(self, mode='human', title=None):
 
@@ -331,21 +369,15 @@ class NovelGridworldV2Env(gym.Env):
         # plt.colorbar()
         # plt.grid()
 
-        # legend_elements = [Line2D([0], [0], color='w', label="Agent Facing: " + self.agent_facing_str),
-        #                    Line2D([0], [0], color='w', label="Action: " + self.action_str[self.last_action]),
-        #                    Line2D([0], [0], color='w', label="Reward: " + str(self.last_reward))]
-        # legend1 = plt.legend(handles=legend_elements, title="Info:", title_fontsize=12,
-        #                      bbox_to_anchor=(1.62, 0.7))  # x, y
-
         info = '\n'.join(["               Info:             ",
-                          "Env: "+self.env_name,
+                          "Env: " + self.env_name,
                           "Steps: " + str(self.step_count),
                           "Agent Facing: " + self.agent_facing_str,
                           "Action: " + self.action_str[self.last_action],
                           "Reward: " + str(self.last_reward),
                           "Done: " + str(self.last_done)])
         props = dict(boxstyle='round', facecolor='w', alpha=0.2)
-        plt.text(-(self.map_size // 2) - 0.5, 1.5, info, fontsize=10, bbox=props)
+        plt.text(-(self.map_size // 2) - 0.5, 2.25, info, fontsize=10, bbox=props)  # x, y
 
         if self.last_done:
             you_win = "YOU WIN "+self.env_name+"!!!"
@@ -362,8 +394,7 @@ class NovelGridworldV2Env(gym.Env):
             legend_elements.append(Line2D([0], [0], marker="s", color='w',
                                           label=item + ': ' + str(self.inventory_items_quantity[item]),
                                           markerfacecolor=rgba, markersize=16))
-        plt.legend(handles=legend_elements, bbox_to_anchor=(1.5, 1.02))  # x, y
-        # plt.gca().add_artist(legend1)
+        plt.legend(handles=legend_elements, bbox_to_anchor=(1.55, 1.02))  # x, y
 
         plt.tight_layout()
         plt.pause(0.01)

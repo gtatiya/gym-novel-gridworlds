@@ -102,11 +102,4 @@ python keyboard_interface.py
 </td>
 </tr>
 
-<tr>
-<td>
-<a href="https://github.com/gtatiya/gym-novel-gridworlds/wiki#novelgridworld-v6">NovelGridworld-v6</a>
-<img src="pics/NovelGridworld-v6.gif" alt="drawing" width="800" height="250"/>
-</td>
-</tr>
-
 </table>

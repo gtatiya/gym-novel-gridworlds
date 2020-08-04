@@ -1,7 +1,6 @@
 # Author: Gyan Tatiya
 # Email: Gyan.Tatiya@tufts.edu
 
-import copy
 import math
 import random
 
@@ -139,11 +138,12 @@ class NovelGridworldV0Env(gym.Env):
 
         direction_radian = {'NORTH': np.pi, 'SOUTH': 0, 'WEST': 3 * np.pi / 2, 'EAST': np.pi / 2}
 
-        # All directions
+        # Shoot beams in 180 degrees in front of agent
         angles_list = np.linspace(direction_radian[self.agent_facing_str] - np.pi / 2,
                                   direction_radian[self.agent_facing_str] + np.pi / 2, self.num_beams)
 
         lidar_signals = []
+        r, c = self.agent_location
         for angle in angles_list:
             x_ratio, y_ratio = np.round(np.cos(angle), 2), np.round((np.sin(angle)), 2)
 
@@ -153,7 +153,6 @@ class NovelGridworldV0Env(gym.Env):
 
             # Keep sending longer beams until hit an object or wall
             while True:
-                r, c = self.agent_location
                 r_obj = r + np.round(beam_range * x_ratio)
                 c_obj = c + np.round(beam_range * y_ratio)
                 obj_id_rc = self.map[int(r_obj)][int(c_obj)]
@@ -226,9 +225,10 @@ class NovelGridworldV0Env(gym.Env):
             elif self.agent_facing_str == 'EAST':
                 self.set_agent_facing('SOUTH')
 
+        # Update after each step
         observation = self.get_lidarSignal()
-
         self.find_block_in_front()
+
         done = False
         if self.block_in_front == self.items_id['crafting_table']:
             reward = 50

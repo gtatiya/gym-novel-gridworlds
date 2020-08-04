@@ -8,18 +8,17 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import PPO2
 
 
-env_id = 'NovelGridworld-v0'
+env_id = 'NovelGridworld-v3'
 env = gym.make(env_id)
 
 # Load the trained agent
-model = PPO2.load('NovelGridworld-v0_ppo2_100000_last_model_remap_action')
+model = PPO2.load('NovelGridworld-v3_200000_8beams0filled40range3items_in_360degrees_lfd_best_model')
 
 # env.map_size = 20
 # env.items_quantity = {'crafting_table': 2}
-# env.num_beams = 5
-env.action_str = {0: 'Forward', 1: 'Right', 2: 'Left'}
+# env.action_str = {0: 'Forward', 1: 'Right', 2: 'Left'}
 
-for i_episode in range(5):
+for i_episode in range(10):
     print("EPISODE STARTS")
     obs = env.reset()
     for i in range(100):

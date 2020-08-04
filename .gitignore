@@ -13,5 +13,6 @@ __pycache__/
 /build/
 
 # folders
-results/
 models/
+models2/
+results/

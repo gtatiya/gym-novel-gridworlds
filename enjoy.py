@@ -36,7 +36,6 @@ ENV_ALGO = {
     'NovelGridworld-v2': PPO2,
     'NovelGridworld-v3': PPO2,
     'NovelGridworld-v4': PPO2,
-    'NovelGridworld-v5': PPO2,
 }
 
 if __name__ == "__main__":
@@ -56,12 +55,12 @@ if __name__ == "__main__":
     env = gym.make(args['env'])
 
     # Load the trained agent
-    if args['env'] == 'NovelGridworld-v6':
-        env_id_list = ['NovelGridworld-v2', 'NovelGridworld-v3', 'NovelGridworld-v4', 'NovelGridworld-v5',
-                       'NovelGridworld-v4']
+    if args['env'] == 'NovelGridworld-v5':
+        env_id_list = ['NovelGridworld-v1', 'NovelGridworld-v2', 'NovelGridworld-v3', 'NovelGridworld-v4',
+                       'NovelGridworld-v3']
         # Provide a unique key for each env
-        env_key_list = ['NovelGridworld-v2', 'NovelGridworld-v3', 'NovelGridworld-v4_tree_tap', 'NovelGridworld-v5',
-                        'NovelGridworld-v4_pogo_stick']
+        env_key_list = ['NovelGridworld-v1', 'NovelGridworld-v2', 'NovelGridworld-v3_tree_tap', 'NovelGridworld-v4',
+                        'NovelGridworld-v3_pogo_stick']
         render_title = args['env']
 
         render = True

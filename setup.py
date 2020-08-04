@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='gym-novel-gridworlds',
-      version='1.1',
+      version='1.2',
       install_requires=['gym', 'matplotlib', 'numpy', 'keyboard'],
       author="Gyan Tatiya",
       author_email="Gyan.Tatiya@tufts.edu",
