@@ -1,4 +1,5 @@
 from gym.envs.registration import register
+import gym_novel_gridworlds.wrappers
 
 register(
     id='NovelGridworld-v0',

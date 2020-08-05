@@ -16,3 +16,4 @@ __pycache__/
 models/
 models2/
 results/
+saved_trajectories/

@@ -21,7 +21,7 @@ try:
         action = conn_agent.recv(1024).decode()[:-1]  # get action from agent
         if action == '':
             break
-        action_num = list(env.action_str.values()).index(action)
+        action_num = list(env.action_str.keys())[list(env.action_str.values()).index(action)]
 
         obs, reward, done, info = env.step(action_num)
         msg = {'observation': obs.tolist(), 'reward': reward, 'done': done}
@@ -32,6 +32,7 @@ try:
         print("Result: ", msg)
 except KeyboardInterrupt:
     pass
+
 sock_agent.shutdown(socket.SHUT_RDWR)
 sock_agent.close()
 env.close()

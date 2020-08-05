@@ -3,6 +3,7 @@ import time
 
 import gym
 import gym_novel_gridworlds
+from gym_novel_gridworlds.wrappers import SaveTrajectories, LidarInFront
 import keyboard
 import numpy as np
 import matplotlib.image as mpimg
@@ -41,15 +42,16 @@ def fix_item_location(item, location):
         env.map[location[0]][location[1]] = env.items_id[item]
 
 
-env_id = 'NovelGridworld-v5'
+env_id = 'NovelGridworld-v1'
 env = gym.make(env_id)
+# env = SaveTrajectories(env, save_path="saved_trajectories")
+# env = LidarInFront(env)
 # env.map_size = 8
 obs = env.reset()
 env.render()
 # fix_item_location('crafting_table', (3, 2))
 
 KEY_ACTION_DICT = ENV_KEY[env_id]
-
 
 for i in range(100):
     env.render()
@@ -79,4 +81,5 @@ for i in range(100):
         observation = env.reset()
         # fix_item_location('crafting_table', (3, 2))
 
+# env.save()
 env.close()
