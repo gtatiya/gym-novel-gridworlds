@@ -45,6 +45,7 @@ class NovelGridworldV0Env(gym.Env):
         # Action Space
         self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right'}
         self.action_space = spaces.Discrete(len(self.action_str))
+        self.recipes = {}
         self.last_action = 0  # last actions executed
         self.step_count = 0  # no. of steps taken
 
