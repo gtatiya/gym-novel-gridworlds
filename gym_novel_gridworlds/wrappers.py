@@ -33,15 +33,19 @@ class SaveTrajectories(gym.core.Wrapper):
     def get_state(self):
 
         state = {"map_size": self.env.map_size,
+                 "map": self.env.map,
+                 "agent_location": self.env.agent_location,
+                 "agent_facing_str": self.env.agent_facing_str,
+                 "block_in_front_id": self.env.block_in_front_id,
+
                  "items_id": self.env.items_id,
                  "items_quantity": self.env.items_quantity,
                  "inventory_items_quantity": self.env.inventory_items_quantity,
-                 "agent_location": self.env.agent_location,
-                 "agent_facing_str": self.env.agent_facing_str,
-                 "map": self.env.map,
+
                  "action_str": self.env.action_str,
                  "last_action": self.env.last_action,
-                 "block_in_front_id": self.env.block_in_front_id}
+
+                 "last_done": self.last_done}
 
         return state
 

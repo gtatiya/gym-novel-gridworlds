@@ -29,6 +29,7 @@ class NovelGridworldV5Env(gym.Env):
         self.env_name = 'NovelGridworld-v5'
         self.env = env  # env to restore in reset
         self.map_size = 10
+        self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
         self.agent_facing_str = 'NORTH'
@@ -36,7 +37,6 @@ class NovelGridworldV5Env(gym.Env):
         self.block_in_front_str = 'air'
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
-        self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.items = ['wall', 'crafting_table', 'tree_log', 'pogo_stick', 'stick', 'plank', 'rubber', 'tree_tap']
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
         # items_quantity when the episode starts, do not include wall, quantity must be more than  0
