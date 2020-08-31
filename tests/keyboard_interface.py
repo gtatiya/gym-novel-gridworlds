@@ -3,12 +3,14 @@ import time
 
 import gym
 import gym_novel_gridworlds
-from gym_novel_gridworlds.wrappers import SaveTrajectories, LidarInFront
+from gym_novel_gridworlds.constant import env_key
+from gym_novel_gridworlds.wrappers import SaveTrajectories
+from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
+from gym_novel_gridworlds.novelty_wrappers import Level1Easy, Level1Medium, Level1Hard
+
 import keyboard
 import numpy as np
 import matplotlib.image as mpimg
-
-from constant import ENV_KEY
 
 
 def print_play_keys(action_str):
@@ -42,44 +44,61 @@ def fix_item_location(item, location):
         env.map[location[0]][location[1]] = env.items_id[item]
 
 
-env_id = 'NovelGridworld-v1'
+env_id = 'NovelGridworld-v6'
 env = gym.make(env_id)
 # env = SaveTrajectories(env, save_path="saved_trajectories")
 # env = LidarInFront(env)
-# env.map_size = 8
-obs = env.reset()
-env.render()
+env = AgentMap(env)
+# env.map_size = np.random.randint(low=10, high=20, size=1)[0]
 # fix_item_location('crafting_table', (3, 2))
 
-KEY_ACTION_DICT = ENV_KEY[env_id]
+KEY_ACTION_DICT = env_key[env_id]
 
+level, difficulty = 1, ''  # easy, medium, hard
+if level == 1:
+    if difficulty == 'easy':
+        env = Level1Easy(env)
+    elif difficulty == 'medium':
+        env = Level1Medium(env)
+    elif difficulty == 'hard':
+        env = Level1Hard(env)
+        KEY_ACTION_DICT.update({"5": len(KEY_ACTION_DICT)})  # Craft_axe
+
+obs = env.reset()
+env.render()
 for i in range(100):
-    env.render()
     print_play_keys(env.action_str)
     action = get_action_from_keyboard()  # take action from keyboard
+    observation, reward, done, info = env.step(action)
 
     print("action: ", action, env.action_str[action])
-    observation, reward, done, info = env.step(action)
-    # print("inventory_items_quantity: ", env.inventory_items_quantity)
-    print("items_id: ", env.items_id)
-
     print("Step: " + str(i) + ", reward: ", reward)
     print("observation: ", len(observation), observation)
+
+    print("inventory_items_quantity: ", len(env.inventory_items_quantity), env.inventory_items_quantity)
+    print("items_id: ", len(env.items_id), env.items_id)
+
+    try:
+        print("step_cost, message: ", info['step_cost'], info['message'])
+        print("selected_item: ", env.selected_item)
+    except:
+        pass
+
     time.sleep(0.2)
     print("")
 
     if i == 10:
         # env.remap_action()
         # print("action_str: ", env.action_str)
+        # env.add_new_items({'rock': 3, 'axe': 1})
         pass
 
+    env.render()
     if done:
-        env.render()
         print("Finished after " + str(i) + " timesteps\n")
         time.sleep(2)
-        # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
-        observation = env.reset()
-        # fix_item_location('crafting_table', (3, 2))
+        obs = env.reset()
+        env.render()
 
 # env.save()
 env.close()

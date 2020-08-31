@@ -37,7 +37,7 @@ class NovelGridworldV0Env(gym.Env):
         self.block_in_front_location = (0, 0)  # row, column
         self.items = ['wall', 'crafting_table']
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'wall': 2}  # ID cannot be 0 as air = 0
-        self.items_quantity = {'crafting_table': 1}  # Do not include wall, quantity must be more than  0
+        self.items_quantity = {'crafting_table': 1}  # Do not include wall, quantity must be more than 0
         self.inventory_items_quantity = {}
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
@@ -300,7 +300,7 @@ class NovelGridworldV0Env(gym.Env):
             x2, y2 = 0.01, 0
 
         plt.figure(self.env_name, figsize=(9, 5))
-        plt.imshow(self.map, cMAP=color_map)
+        plt.imshow(self.map, cMAP=color_map, vmin=0, vmax=len(self.items_id))
         plt.arrow(c, r, x2, y2, head_width=0.7, head_length=0.7, color='white')
         plt.title('NORTH', fontsize=10)
         plt.xlabel('SOUTH')

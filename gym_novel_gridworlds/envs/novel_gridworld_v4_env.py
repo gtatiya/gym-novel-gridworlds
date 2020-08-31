@@ -38,7 +38,7 @@ class NovelGridworldV4Env(gym.Env):
         self.block_in_front_location = (0, 0)  # row, column
         self.items = ['wall', 'crafting_table', 'tree_log', 'pogo_stick', 'stick', 'plank', 'rubber', 'tree_tap']
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
-        # items_quantity when the episode starts, do not include wall, quantity must be more than  0
+        # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'tree_log': 2}
         self.inventory_items_quantity = {item: 0 for item in self.items}
         self.inventory_items_quantity['tree_tap'] = 1  # to enable placing tree_tap and extracting rubber directly
@@ -77,6 +77,7 @@ class NovelGridworldV4Env(gym.Env):
         if self.env is not None:
             print("RESTORING " + self.env_name + " ...")
             self.map_size = copy.deepcopy(self.env.map_size)
+            self.map = copy.deepcopy(self.env.map)
             self.items_id = copy.deepcopy(self.env.items_id)
             self.items_quantity = copy.deepcopy(self.env.items_quantity)
             self.inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
@@ -86,7 +87,6 @@ class NovelGridworldV4Env(gym.Env):
             self.step_count = copy.deepcopy(self.env.step_count)  # no. of steps taken
             self.last_reward = copy.deepcopy(self.env.last_reward)  # last received reward
             self.last_done = False  # last done
-            self.map = copy.deepcopy(self.env.map)
             self.agent_location = copy.deepcopy(self.env.agent_location)
             self.agent_facing_str = copy.deepcopy(self.env.agent_facing_str)
             self.agent_facing_id = copy.deepcopy(self.env.agent_facing_id)
@@ -431,7 +431,7 @@ class NovelGridworldV4Env(gym.Env):
             x2, y2 = 0.01, 0
 
         plt.figure(title, figsize=(9, 5))
-        plt.imshow(self.map, cMAP=color_map)
+        plt.imshow(self.map, cMAP=color_map, vmin=0, vmax=len(self.items_id))
         plt.arrow(c, r, x2, y2, head_width=0.7, head_length=0.7, color='white')
         plt.title('NORTH', fontsize=10)
         plt.xlabel('SOUTH')
