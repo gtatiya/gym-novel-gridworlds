@@ -441,6 +441,27 @@ class NovelGridworldV6Env(gym.Env):
             self.items_quantity.update({item: new_items_quantity[item]})
         self.reset()
 
+    def block_items(self, item_to_block, item_to_block_from):
+        """
+        Add item_to_block_from around item_to_block
+        """
+
+        result = np.where(self.map == self.items_id[item_to_block])
+        for i in range(len(result[0])):
+            r, c = result[0][i], result[1][i]
+            # NORTH
+            if (0 <= (r - 1) <= self.map_size - 1) and self.map[r - 1][c] == 0 and (r - 1, c) != self.agent_location:
+                self.map[r - 1][c] = self.items_id[item_to_block_from]
+            # SOUTH
+            if (0 <= (r + 1) <= self.map_size - 1) and self.map[r + 1][c] == 0 and (r + 1, c) != self.agent_location:
+                self.map[r + 1][c] = self.items_id[item_to_block_from]
+            # WEST
+            if (0 <= (c - 1) <= self.map_size - 1) and self.map[r][c - 1] == 0 and (r, c - 1) != self.agent_location:
+                self.map[r][c - 1] = self.items_id[item_to_block_from]
+            # EAST
+            if (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == 0 and (r, c + 1) != self.agent_location:
+                self.map[r][c + 1] = self.items_id[item_to_block_from]
+
     def grab_entities(self):
 
         r, c = self.agent_location

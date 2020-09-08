@@ -6,7 +6,7 @@ import gym_novel_gridworlds
 from gym_novel_gridworlds.constant import env_key
 from gym_novel_gridworlds.wrappers import SaveTrajectories
 from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
-from gym_novel_gridworlds.novelty_wrappers import Level1Easy, Level1Medium, Level1Hard
+from gym_novel_gridworlds.novelty_wrappers import Level1Easy, Level1Medium, Level1Hard, BlockItems
 
 import keyboard
 import numpy as np
@@ -46,14 +46,17 @@ def fix_item_location(item, location):
 
 env_id = 'NovelGridworld-v6'
 env = gym.make(env_id)
+# wrappers
 # env = SaveTrajectories(env, save_path="saved_trajectories")
+
+# observation_wrappers
 # env = LidarInFront(env)
-env = AgentMap(env)
-# env.map_size = np.random.randint(low=10, high=20, size=1)[0]
-# fix_item_location('crafting_table', (3, 2))
+# env = AgentMap(env)
 
 KEY_ACTION_DICT = env_key[env_id]
 
+# novelty_wrappers
+env = BlockItems(env)
 level, difficulty = 1, ''  # easy, medium, hard
 if level == 1:
     if difficulty == 'easy':
@@ -63,6 +66,9 @@ if level == 1:
     elif difficulty == 'hard':
         env = Level1Hard(env)
         KEY_ACTION_DICT.update({"5": len(KEY_ACTION_DICT)})  # Craft_axe
+
+# env.map_size = np.random.randint(low=10, high=20, size=1)[0]
+# fix_item_location('crafting_table', (3, 2))
 
 obs = env.reset()
 env.render()
@@ -87,10 +93,11 @@ for i in range(100):
     time.sleep(0.2)
     print("")
 
-    if i == 10:
+    if i == 5:
         # env.remap_action()
         # print("action_str: ", env.action_str)
         # env.add_new_items({'rock': 3, 'axe': 1})
+        # env.block_items(item_to_block='crafting_table', item_to_block_from='tree_log')
         pass
 
     env.render()

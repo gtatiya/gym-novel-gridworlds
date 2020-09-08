@@ -185,3 +185,28 @@ class Level1Hard(gym.core.Wrapper):
             message = 'Crafted ' + item_to_craft
 
             return reward, step_cost, message
+
+
+class BlockItems(gym.core.Wrapper):
+    """
+    Novelty wrapper to block crafting_table from tree_log when rubber is extracted
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+
+        self.items_to_block = 'crafting_table'
+        self.item_to_block_from = 'tree_log'
+
+    def step(self, action):
+
+        old_rubber_quantity = copy.deepcopy(self.env.inventory_items_quantity['rubber'])
+
+        observation, reward, done, info = self.env.step(action)
+
+        # Extract_rubber
+        if action == 5:
+            if old_rubber_quantity < self.env.inventory_items_quantity['rubber']:
+                self.env.block_items(item_to_block=self.items_to_block, item_to_block_from=self.item_to_block_from)
+
+        return observation, reward, done, info
