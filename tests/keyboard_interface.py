@@ -6,7 +6,7 @@ import gym_novel_gridworlds
 from gym_novel_gridworlds.constant import env_key
 from gym_novel_gridworlds.wrappers import SaveTrajectories
 from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
-from gym_novel_gridworlds.novelty_wrappers import Level1Easy, Level1Medium, Level1Hard, BlockItems
+from gym_novel_gridworlds.novelty_wrappers import Level1Easy, Level1Medium, Level1Hard, BlockItem
 
 import keyboard
 import numpy as np
@@ -56,7 +56,7 @@ env = gym.make(env_id)
 KEY_ACTION_DICT = env_key[env_id]
 
 # novelty_wrappers
-env = BlockItems(env)
+env = BlockItem(env)
 level, difficulty = 1, ''  # easy, medium, hard
 if level == 1:
     if difficulty == 'easy':
@@ -97,7 +97,7 @@ for i in range(100):
         # env.remap_action()
         # print("action_str: ", env.action_str)
         # env.add_new_items({'rock': 3, 'axe': 1})
-        # env.block_items(item_to_block='crafting_table', item_to_block_from='tree_log')
+        # env.block_item(item_to_block='crafting_table', item_to_block_from='tree_log')
         pass
 
     env.render()

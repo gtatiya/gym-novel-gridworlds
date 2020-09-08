@@ -187,7 +187,7 @@ class Level1Hard(gym.core.Wrapper):
             return reward, step_cost, message
 
 
-class BlockItems(gym.core.Wrapper):
+class BlockItem(gym.core.Wrapper):
     """
     Novelty wrapper to block crafting_table from tree_log when rubber is extracted
     """
