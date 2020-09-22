@@ -14,6 +14,18 @@ If you prefer, you can install directly from [PyPI](https://pypi.org/project/gym
 pip install gym-novel-gridworlds
 ```
 
+## BibTeX
+```
+@misc{gym_novel_gridworlds,
+  author = {Tatiya, Gyan},
+  title = {Novel Gridworlds Environment for OpenAI Gym},
+  year = {2020},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/gtatiya/gym-novel-gridworlds}},
+}
+```
+
 ## Development Environment
 
 `Python 3.7.4` and following packages were used for development:<br><br>

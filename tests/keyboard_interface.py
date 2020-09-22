@@ -6,7 +6,8 @@ import gym_novel_gridworlds
 from gym_novel_gridworlds.constant import env_key
 from gym_novel_gridworlds.wrappers import SaveTrajectories
 from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
-from gym_novel_gridworlds.novelty_wrappers import Level1Easy, Level1Medium, Level1Hard, BlockItem
+from gym_novel_gridworlds.novelty_wrappers import Level1AxeEasy, Level1AxeMedium, Level1AxeHard
+from gym_novel_gridworlds.novelty_wrappers import Level1Fence, BlockItem
 
 import keyboard
 import numpy as np
@@ -56,16 +57,28 @@ env = gym.make(env_id)
 KEY_ACTION_DICT = env_key[env_id]
 
 # novelty_wrappers
-env = BlockItem(env)
-level, difficulty = 1, ''  # easy, medium, hard
+novelty_name = 'fence'  # 'axe', 'fence'
+level, difficulty = 1, 'easy'  # easy, medium, hard
 if level == 1:
     if difficulty == 'easy':
-        env = Level1Easy(env)
+        if novelty_name == 'axe':
+            env = Level1AxeEasy(env)
+        elif novelty_name == 'fence':
+            env = Level1Fence(env, difficulty)
     elif difficulty == 'medium':
-        env = Level1Medium(env)
+        if novelty_name == 'axe':
+            env = Level1AxeMedium(env)
+        elif novelty_name == 'fence':
+            env = Level1Fence(env, difficulty)
     elif difficulty == 'hard':
-        env = Level1Hard(env)
+        if novelty_name == 'axe':
+            env = Level1AxeHard(env)
+        elif novelty_name == 'fence':
+            env = Level1Fence(env, difficulty)
+
         KEY_ACTION_DICT.update({"5": len(KEY_ACTION_DICT)})  # Craft_axe
+
+# env = BlockItem(env)
 
 # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
 # fix_item_location('crafting_table', (3, 2))

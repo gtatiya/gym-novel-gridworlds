@@ -1,10 +1,12 @@
 import copy
 
+import numpy as np
+
 import gym
 from gym import error, spaces, utils
 
 
-class Level1Easy(gym.core.Wrapper):
+class Level1AxeEasy(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the inventory and select it
     Using axe reduces the step_cost to 50% (1800.0) when Break action is used
@@ -42,7 +44,7 @@ class Level1Easy(gym.core.Wrapper):
         return observation, reward, done, info
 
 
-class Level1Medium(gym.core.Wrapper):
+class Level1AxeMedium(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the map
     When the agent goes near axe, axe gets into the inventory and gets selected
@@ -74,7 +76,7 @@ class Level1Medium(gym.core.Wrapper):
         return observation, reward, done, info
 
 
-class Level1Hard(gym.core.Wrapper):
+class Level1AxeHard(gym.core.Wrapper):
     """
     Novelty wrapper to add a new recipe and action to craft axe
     When the agent crafts axe, it goes in the inventory and gets selected
@@ -186,6 +188,44 @@ class Level1Hard(gym.core.Wrapper):
 
             return reward, step_cost, message
 
+
+class Level1Fence(gym.core.Wrapper):
+    """
+    Novelty wrapper to add fence around items in the map
+    """
+
+    def __init__(self, env, difficulty='hard'):
+        super().__init__(env)
+
+        self.env.items.append('fence')
+        self.env.items_id.setdefault('fence', len(self.items_id) + 1)
+
+        if difficulty == 'easy':
+            self.fence_percent_range = (20, 50)
+        elif difficulty == 'medium':
+            self.fence_percent_range = (50, 90)
+        else:
+            self.fence_percent_range = (90, 100)
+
+    def reset(self):
+
+        self.env.reset()
+
+        result = np.where((self.env.map != 0) & (self.env.map != self.env.items_id['wall']))
+
+        fence_percent = np.random.randint(low=self.fence_percent_range[0], high=self.fence_percent_range[1], size=1)[0]
+        for i in range(int(np.ceil(len(result[0])*(fence_percent/100)))):
+            r, c = result[0][i], result[1][i]
+            self.env.add_fence_around((r, c))
+
+        # Update after each reset
+        observation = self.get_observation()
+        self.update_block_in_front()
+
+        return observation
+
+
+# Novelty without difficulty types:
 
 class BlockItem(gym.core.Wrapper):
     """

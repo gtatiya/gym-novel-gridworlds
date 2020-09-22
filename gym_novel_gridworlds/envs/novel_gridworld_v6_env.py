@@ -462,6 +462,20 @@ class NovelGridworldV6Env(gym.Env):
             if (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == 0 and (r, c + 1) != self.agent_location:
                 self.map[r][c + 1] = self.items_id[item_to_block_from]
 
+    def add_fence_around(self, item_location):
+        """
+        Add fence around the given location
+        """
+
+        r, c = item_location
+
+        for r_item in [r - 1, r, r + 1]:
+            for c_item in [c - 1, c, c + 1]:
+                item_id_rc = self.map[r_item][c_item]
+
+                if item_id_rc == 0 and (r_item, c_item) != self.agent_location:
+                    self.map[r_item][c_item] = self.items_id['fence']
+
     def grab_entities(self):
 
         r, c = self.agent_location

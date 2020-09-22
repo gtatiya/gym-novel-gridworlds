@@ -56,7 +56,7 @@ class NovelGridworldV1Env(gym.Env):
         self.items_id_lidar = self.set_items_id(self.items_lidar)
         low = np.array([0] * (len(self.items_lidar) * self.num_beams) + [0] * len(self.inventory_items_quantity))
         high = np.array([self.max_beam_range] * (len(self.items_lidar) * self.num_beams) + [40] * len(
-            self.inventory_items_quantity))  # maximum 40 stick can be crafted (5 log -> 20 plank -> 40 stick)
+            self.inventory_items_quantity))  # maximum 40 stick can be crafted (5 tree_log -> 20 plank -> 40 stick)
         self.observation_space = spaces.Box(low, high, dtype=int)
 
         # Reward
