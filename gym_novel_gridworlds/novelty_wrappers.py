@@ -238,6 +238,9 @@ class BlockItem(gym.core.Wrapper):
         self.items_to_block = 'crafting_table'
         self.item_to_block_from = 'tree_log'
 
+        self.env.items.append('fence')
+        self.env.items_id.setdefault('fence', len(self.items_id) + 1)
+
     def step(self, action):
 
         old_rubber_quantity = copy.deepcopy(self.env.inventory_items_quantity['rubber'])
@@ -247,6 +250,13 @@ class BlockItem(gym.core.Wrapper):
         # Extract_rubber
         if action == 5:
             if old_rubber_quantity < self.env.inventory_items_quantity['rubber']:
-                self.env.block_items(item_to_block=self.items_to_block, item_to_block_from=self.item_to_block_from)
+                # Block by self.item_to_block_from
+                # self.env.block_items(item_to_block=self.items_to_block, item_to_block_from=self.item_to_block_from)
+
+                # Block by fence
+                result = np.where(self.env.map == self.env.items_id[self.items_to_block])
+                for i in range(len(result[0])):
+                    r, c = result[0][i], result[1][i]
+                    self.env.add_fence_around((r, c))
 
         return observation, reward, done, info

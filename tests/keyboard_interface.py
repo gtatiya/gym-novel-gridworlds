@@ -57,7 +57,7 @@ env = gym.make(env_id)
 KEY_ACTION_DICT = env_key[env_id]
 
 # novelty_wrappers
-novelty_name = 'fence'  # 'axe', 'fence'
+novelty_name = ''  # 'axe', 'fence'
 level, difficulty = 1, 'easy'  # easy, medium, hard
 if level == 1:
     if difficulty == 'easy':
@@ -78,7 +78,7 @@ if level == 1:
 
         KEY_ACTION_DICT.update({"5": len(KEY_ACTION_DICT)})  # Craft_axe
 
-# env = BlockItem(env)
+env = BlockItem(env)
 
 # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
 # fix_item_location('crafting_table', (3, 2))
