@@ -53,8 +53,7 @@ class NovelGridworldV6Env(gym.Env):
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
                         'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}},
-                        'tree_tap': {'input': {'plank': 5, 'stick': 1}, 'output': {'tree_tap': 1}},
-                        'crafting_table': {'input': {'plank': 4}, 'output': {'crafting_table': 1}}}
+                        'tree_tap': {'input': {'plank': 5, 'stick': 1}, 'output': {'tree_tap': 1}}}
         self.last_action = 0  # last actions executed
         self.step_count = 0  # no. of steps taken
         self.last_step_cost = 0  # last received step_cost
