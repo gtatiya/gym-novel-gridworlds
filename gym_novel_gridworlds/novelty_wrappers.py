@@ -18,14 +18,14 @@ class Level1AxeEasy(gym.core.Wrapper):
         self.env.items.append('axe')
         self.env.items_id.setdefault('axe', len(self.items_id) + 1)
         self.env.inventory_items_quantity.update({'axe': 1})
-        self.env.selected_item = 'axe'
+        self.env.selected_item = ''  # axe
 
     def reset(self):
 
         obs = self.env.reset()
 
         self.env.inventory_items_quantity.update({'axe': 1})
-        self.env.selected_item = 'axe'
+        self.env.selected_item = ''  # axe
 
         return obs
 
