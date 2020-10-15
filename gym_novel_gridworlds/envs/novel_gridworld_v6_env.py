@@ -38,6 +38,7 @@ class NovelGridworldV6Env(gym.Env):
         self.block_in_front_location = (0, 0)  # row, column
         self.items = ['wall', 'crafting_table', 'tree_log', 'pogo_stick', 'stick', 'plank', 'rubber', 'tree_tap']
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
+        self.unbreakable_items = ['wall']
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'tree_log': 5}
         self.inventory_items_quantity = {item: 0 for item in self.items}
@@ -47,13 +48,21 @@ class NovelGridworldV6Env(gym.Env):
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
         # Action Space
-        self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap', 5: 'Extract_rubber',
-                           6: 'Craft_plank', 7: 'Craft_stick', 8: 'Craft_tree_tap', 9: 'Craft_pogo_stick'}
-        self.action_space = spaces.Discrete(len(self.action_str))
+        self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap', 5: 'Extract_rubber'}
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
                         'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}},
                         'tree_tap': {'input': {'plank': 5, 'stick': 1}, 'output': {'tree_tap': 1}}}
+        # Add a Craft action for each recipe
+        self.action_craft_str = {len(self.action_str) + i: 'Craft_' + item for i, item in
+                                 enumerate(sorted(self.recipes.keys()))}
+        self.action_str.update(self.action_craft_str)
+        # Add a Select action for each item except unbreakable items
+        self.action_select_str = {len(self.action_str) + i: 'Select_' + item for i, item in
+                                  enumerate(sorted(list(set(self.items) ^ set(self.unbreakable_items))))}
+        self.action_str.update(self.action_select_str)
+        self.action_space = spaces.Discrete(len(self.action_str))
+
         self.last_action = 0  # last actions executed
         self.step_count = 0  # no. of steps taken
         self.last_step_cost = 0  # last received step_cost
@@ -251,7 +260,7 @@ class NovelGridworldV6Env(gym.Env):
         elif action == 3:
             self.update_block_in_front()
             # If block in front is not air and wall, place the block in front in inventory
-            if self.block_in_front_str not in ['air', 'wall']:
+            if self.block_in_front_str not in ['air'] + self.unbreakable_items:
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
 
@@ -291,22 +300,19 @@ class NovelGridworldV6Env(gym.Env):
                 self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
                 reward = 15
                 step_cost = 50000
-        # Craft_plank
-        elif action == 6:
-            item_to_craft = 'plank'
+        # Craft
+        elif action in self.action_craft_str:
+            item_to_craft = '_'.join(self.action_craft_str[action].split('_')[1:])
             reward, step_cost, message = self.craft(item_to_craft)
-        # Craft_stick
-        elif action == 7:
-            item_to_craft = 'stick'
-            reward, step_cost, message = self.craft(item_to_craft)
-        # Craft_tree_tap
-        elif action == 8:
-            item_to_craft = 'tree_tap'
-            reward, step_cost, message = self.craft(item_to_craft)
-        # Craft_pogo_stick
-        elif action == 9:
-            item_to_craft = 'pogo_stick'
-            reward, step_cost, message = self.craft(item_to_craft)
+        # Select
+        elif action in self.action_select_str:
+            item_to_select = '_'.join(self.action_select_str[action].split('_')[1:])
+
+            step_cost = 120.0
+            if item_to_select in self.inventory_items_quantity and self.inventory_items_quantity[item_to_select] >= 1:
+                self.selected_item = item_to_select
+            else:
+                message = 'Item not found in inventory'
 
         # Update after each step
         self.grab_entities()

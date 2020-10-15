@@ -46,8 +46,15 @@ env_key = {
         "z": 4,  # Place_tree_tap
         "x": 5,  # Extract_rubber
         "1": 6,  # Craft_plank
-        "2": 7,  # Craft_stick
-        "3": 8,  # Craft_tree_tap
-        "4": 9,  # Craft_pogo_stick
+        "2": 8,  # Craft_stick
+        "3": 9,  # Craft_tree_tap
+        "4": 7,  # Craft_pogo_stick
+        "r": 10,  # Select_crafting_table
+        "t": 11,  # Select_plank
+        "y": 12,  # Select_pogo_stick
+        "u": 13,  # Select_rubber
+        "i": 14,  # Select_stick
+        "o": 15,  # Select_tree_log
+        "p": 16,  # Select_tree_tap
     }
 }

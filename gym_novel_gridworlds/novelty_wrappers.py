@@ -18,14 +18,14 @@ class Level1AxeEasy(gym.core.Wrapper):
         self.env.items.append('axe')
         self.env.items_id.setdefault('axe', len(self.items_id) + 1)
         self.env.inventory_items_quantity.update({'axe': 1})
-        self.env.selected_item = ''  # axe
+        self.env.action_select_str.update({len(self.env.action_str): 'Select_axe'})
+        self.env.action_str.update(self.env.action_select_str)
 
     def reset(self):
 
         obs = self.env.reset()
 
         self.env.inventory_items_quantity.update({'axe': 1})
-        self.env.selected_item = ''  # axe
 
         return obs
 
@@ -56,15 +56,14 @@ class Level1AxeMedium(gym.core.Wrapper):
 
         self.env.add_new_items({'axe': 1})
         self.env.entities.append('axe')
+        self.env.action_select_str.update({len(self.env.action_str): 'Select_axe'})
+        self.env.action_str.update(self.env.action_select_str)
 
     def step(self, action):
 
         old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
 
         observation, reward, done, info = self.env.step(action)
-
-        if self.env.inventory_items_quantity['axe'] >= 1:
-            self.env.selected_item = 'axe'
 
         # Break
         if action == 3:
@@ -87,9 +86,12 @@ class Level1AxeHard(gym.core.Wrapper):
         super().__init__(env)
 
         # Action Space
-        self.env.action_str.update({len(self.action_str): 'Craft_axe'})
-        self.env.action_space = spaces.Discrete(len(self.action_str))
         self.env.recipes.update({'axe': {'input': {'stick': 2, 'plank': 3}, 'output': {'axe': 1}}})
+        # self.action_craft_str.update({len(self.action_str): 'Craft_axe'})
+        self.env.action_str.update({len(self.env.action_str): 'Craft_axe'})
+        self.env.action_select_str.update({len(self.env.action_str): 'Select_axe'})
+        self.env.action_str.update(self.env.action_select_str)
+        self.env.action_space = spaces.Discrete(len(self.env.action_str))
 
     def step(self, action):
 
@@ -98,7 +100,7 @@ class Level1AxeHard(gym.core.Wrapper):
         observation, reward, done, info = self.env.step(action)
 
         # Craft_axe
-        if action == len(self.env.action_str) - 1:
+        if action == len(self.env.action_str) - 2:
             item_to_craft = 'axe'
 
             self.env.items.append(item_to_craft)
@@ -111,9 +113,6 @@ class Level1AxeHard(gym.core.Wrapper):
             info = {'step_cost': step_cost, 'message': message}
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
-
-            if self.env.inventory_items_quantity[item_to_craft] >= 1:
-                self.env.selected_item = item_to_craft
         # Break
         elif action == 3:
             if old_inventory_items_quantity != self.env.inventory_items_quantity \

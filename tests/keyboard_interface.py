@@ -58,25 +58,27 @@ KEY_ACTION_DICT = env_key[env_id]
 
 # novelty_wrappers
 novelty_name = 'axe'  # 'axe', 'fence'
-level, difficulty = 1, 'easy'  # easy, medium, hard
+level, difficulty = 1, 'hard'  # easy, medium, hard
 if level == 1:
     if difficulty == 'easy':
         if novelty_name == 'axe':
             env = Level1AxeEasy(env)
+            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
         elif novelty_name == 'fence':
             env = Level1Fence(env, difficulty)
     elif difficulty == 'medium':
         if novelty_name == 'axe':
             env = Level1AxeMedium(env)
+            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
         elif novelty_name == 'fence':
             env = Level1Fence(env, difficulty)
     elif difficulty == 'hard':
         if novelty_name == 'axe':
             env = Level1AxeHard(env)
+            KEY_ACTION_DICT.update({"5": len(KEY_ACTION_DICT)})  # Craft_axe
+            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
         elif novelty_name == 'fence':
             env = Level1Fence(env, difficulty)
-
-        KEY_ACTION_DICT.update({"5": len(KEY_ACTION_DICT)})  # Craft_axe
 
 # env = BlockItem(env)
 
