@@ -216,6 +216,8 @@ class Level1AxetoBreakEasy(gym.core.Wrapper):
 
         # Break
         if action == 3:
+            self.env.last_action = action
+
             reward = -1  # default reward
             step_cost = 3600.0
             message = ''
@@ -280,6 +282,8 @@ class Level1AxetoBreakMedium(gym.core.Wrapper):
 
         # Break
         if action == 3:
+            self.env.last_action = action
+            
             reward = -1  # default reward
             step_cost = 3600.0
             message = ''
