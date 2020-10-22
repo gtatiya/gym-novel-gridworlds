@@ -7,6 +7,7 @@ from gym_novel_gridworlds.constant import env_key
 from gym_novel_gridworlds.wrappers import SaveTrajectories
 from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
 from gym_novel_gridworlds.novelty_wrappers import Level1AxeEasy, Level1AxeMedium, Level1AxeHard
+from gym_novel_gridworlds.novelty_wrappers import Level1AxetoBreakEasy, Level1AxetoBreakMedium
 from gym_novel_gridworlds.novelty_wrappers import Level1Fence, BlockItem
 
 import keyboard
@@ -57,18 +58,24 @@ env = gym.make(env_id)
 KEY_ACTION_DICT = env_key[env_id]
 
 # novelty_wrappers
-novelty_name = 'axe'  # 'axe', 'fence'
-level, difficulty = 1, 'hard'  # easy, medium, hard
+novelty_name = 'axetobreak'  # 'axe', 'axetobreak, 'fence'
+level, difficulty = 1, 'easy'  # easy, medium, hard
 if level == 1:
     if difficulty == 'easy':
         if novelty_name == 'axe':
             env = Level1AxeEasy(env)
+            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
+        elif novelty_name == 'axetobreak':
+            env = Level1AxetoBreakEasy(env)
             KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
         elif novelty_name == 'fence':
             env = Level1Fence(env, difficulty)
     elif difficulty == 'medium':
         if novelty_name == 'axe':
             env = Level1AxeMedium(env)
+            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
+        elif novelty_name == 'axetobreak':
+            env = Level1AxetoBreakMedium(env)
             KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
         elif novelty_name == 'fence':
             env = Level1Fence(env, difficulty)

@@ -8,7 +8,7 @@ from gym import error, spaces, utils
 
 class Level1AxeEasy(gym.core.Wrapper):
     """
-    Novelty wrapper to add a new item (axe) in the inventory and select it
+    Novelty wrapper to add a new item (axe) in the inventory
     Using axe reduces the step_cost to 50% (1800.0) when Break action is used
     """
 
@@ -18,6 +18,7 @@ class Level1AxeEasy(gym.core.Wrapper):
         self.env.items.append('axe')
         self.env.items_id.setdefault('axe', len(self.items_id) + 1)
         self.env.inventory_items_quantity.update({'axe': 1})
+        self.env.entities.append('axe')
         self.env.action_select_str.update({len(self.env.action_str): 'Select_axe'})
         self.env.action_str.update(self.env.action_select_str)
 
@@ -47,7 +48,7 @@ class Level1AxeEasy(gym.core.Wrapper):
 class Level1AxeMedium(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the map
-    When the agent goes near axe, axe gets into the inventory and gets selected
+    When the agent goes near axe, axe gets into the inventory
     Using axe reduces the step_cost to 50% (1800.0) when Break action is used
     """
 
@@ -78,12 +79,18 @@ class Level1AxeMedium(gym.core.Wrapper):
 class Level1AxeHard(gym.core.Wrapper):
     """
     Novelty wrapper to add a new recipe and action to craft axe
-    When the agent crafts axe, it goes in the inventory and gets selected
+    When the agent crafts axe, it goes in the inventory
+    Axe is required axe to break items
     Using axe reduces the step_cost to 50% (1800.0) when Break action is used
     """
 
     def __init__(self, env):
         super().__init__(env)
+
+        self.env.items.append('axe')
+        self.env.items_id.setdefault('axe', len(self.items_id) + 1)
+        self.env.inventory_items_quantity.update({'axe': 0})
+        self.env.entities.append('axe')
 
         # Action Space
         self.env.recipes.update({'axe': {'input': {'stick': 2, 'plank': 3}, 'output': {'axe': 1}}})
@@ -101,14 +108,7 @@ class Level1AxeHard(gym.core.Wrapper):
 
         # Craft_axe
         if action == len(self.env.action_str) - 2:
-            item_to_craft = 'axe'
-
-            self.env.items.append(item_to_craft)
-            self.env.items_id.setdefault(item_to_craft, len(self.items_id) + 1)
-            self.env.inventory_items_quantity.update({item_to_craft: 0})
-            self.env.entities.append(item_to_craft)
-
-            reward, step_cost, message = self.craft(item_to_craft)
+            reward, step_cost, message = self.craft('axe')
             observation = self.env.get_observation()
             info = {'step_cost': step_cost, 'message': message}
             self.env.last_step_cost = step_cost
@@ -186,6 +186,142 @@ class Level1AxeHard(gym.core.Wrapper):
             message = 'Crafted ' + item_to_craft
 
             return reward, step_cost, message
+
+
+class Level1AxetoBreakEasy(gym.core.Wrapper):
+    """
+    Novelty wrapper to add a new item (axe) in the inventory and requiring axe to break items
+    Using axe reduces the step_cost to 50% (1800.0) when Break action is used
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+
+        self.env.items.append('axe')
+        self.env.items_id.setdefault('axe', len(self.items_id) + 1)
+        self.env.inventory_items_quantity.update({'axe': 1})
+        self.env.entities.append('axe')
+        self.env.action_select_str.update({len(self.env.action_str): 'Select_axe'})
+        self.env.action_str.update(self.env.action_select_str)
+
+    def reset(self):
+
+        obs = self.env.reset()
+
+        self.env.inventory_items_quantity.update({'axe': 1})
+
+        return obs
+
+    def step(self, action):
+
+        # Break
+        if action == 3:
+            reward = -1  # default reward
+            step_cost = 3600.0
+            message = ''
+
+            self.env.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if self.env.block_in_front_str not in ['air'] + self.env.unbreakable_items and \
+                    self.env.inventory_items_quantity['axe'] >= 1 and self.env.selected_item == 'axe':
+                block_r, block_c = self.env.block_in_front_location
+                self.env.map[block_r][block_c] = 0
+
+                if self.env.block_in_front_str == 'tree_log':
+                    reward = 10
+                else:
+                    reward = -10  # break something else
+                self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                step_cost = step_cost * 0.5  # 1800.0
+            else:
+                message = "Cannot break " + self.env.block_in_front_str
+
+            # Update after each step
+            self.env.grab_entities()
+            observation = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity['pogo_stick'] >= 1:
+                reward = 50
+                done = True
+
+            info = {'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            observation, reward, done, info = self.env.step(action)
+
+        return observation, reward, done, info
+
+
+class Level1AxetoBreakMedium(gym.core.Wrapper):
+    """
+    Novelty wrapper to add a new item (axe) in the map
+    When the agent goes near axe, axe gets into the inventory
+    Axe is required axe to break items
+    Using axe reduces the step_cost to 50% (1800.0) when Break action is used
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+
+        self.env.add_new_items({'axe': 1})
+        self.env.entities.append('axe')
+        self.env.action_select_str.update({len(self.env.action_str): 'Select_axe'})
+        self.env.action_str.update(self.env.action_select_str)
+
+    def step(self, action):
+
+        # Break
+        if action == 3:
+            reward = -1  # default reward
+            step_cost = 3600.0
+            message = ''
+
+            self.env.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if self.env.block_in_front_str not in ['air'] + self.env.unbreakable_items and \
+                    self.env.inventory_items_quantity['axe'] >= 1 and self.env.selected_item == 'axe':
+                block_r, block_c = self.env.block_in_front_location
+                self.env.map[block_r][block_c] = 0
+
+                if self.env.block_in_front_str == 'tree_log':
+                    reward = 10
+                else:
+                    reward = -10  # break something else
+                self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                step_cost = step_cost * 0.5  # 1800.0
+            else:
+                message = "Cannot break " + self.env.block_in_front_str
+
+            # Update after each step
+            self.env.grab_entities()
+            observation = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity['pogo_stick'] >= 1:
+                reward = 50
+                done = True
+
+            info = {'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            observation, reward, done, info = self.env.step(action)
+
+        return observation, reward, done, info
 
 
 class Level1Fence(gym.core.Wrapper):
