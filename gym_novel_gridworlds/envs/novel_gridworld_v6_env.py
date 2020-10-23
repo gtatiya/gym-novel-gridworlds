@@ -20,7 +20,7 @@ class NovelGridworldV6Env(gym.Env):
     Goal: Craft 1 pogo_stick
     State: map, agent_location, agent_facing_id, inventory_items_quantity
     Action: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap', 5: 'Extract_rubber',
-            6: 'Craft_plank', 7: 'Craft_stick', 8: 'Craft_tree_tap', 9: 'Craft_pogo_stick'}
+            Craft action for each recipe, Select action for each item except unbreakable items}
     """
 
     def __init__(self, env=None):
@@ -174,6 +174,10 @@ class NovelGridworldV6Env(gym.Env):
                 count += 1
             self.not_available_locations.append(self.available_locations.pop(idx))
 
+    def set_agent_location(self, r, c):
+
+        self.agent_location = (r, c)
+
     def set_agent_facing(self, direction_str):
 
         self.agent_facing_str = direction_str
@@ -210,7 +214,7 @@ class NovelGridworldV6Env(gym.Env):
     def step(self, action):
         """
         Actions: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap', 5: 'Extract_rubber',
-                6: 'Craft_plank', 7: 'Craft_stick', 8: 'Craft_tree_tap', 9: 'Craft_pogo_stick'}
+            Craft action for each recipe, Select action for each item except unbreakable items}
         """
 
         self.last_action = action
