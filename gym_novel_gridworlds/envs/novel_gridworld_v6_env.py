@@ -43,7 +43,7 @@ class NovelGridworldV6Env(gym.Env):
         self.items_quantity = {'crafting_table': 1, 'tree_log': 5}
         self.inventory_items_quantity = {item: 0 for item in self.items}
         self.selected_item = ''
-        self.entities = ['']
+        self.entities = []
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
