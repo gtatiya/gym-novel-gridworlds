@@ -485,15 +485,18 @@ class NovelGridworldV6Env(gym.Env):
                 if item_id_rc == 0 and (r_item, c_item) != self.agent_location:
                     self.map[r_item][c_item] = self.items_id['fence']
 
-    def grab_entities(self):
+    def grab_entities(self, location=None):
 
-        r, c = self.agent_location
+        if location is None:
+            r, c = self.agent_location
+        else:
+            r, c = location
 
         for r_ent in [r - 1, r, r + 1]:
             for c_ent in [c - 1, c, c + 1]:
                 ent_id_rc = self.map[r_ent][c_ent]
 
-                # If there's an entity next to agent
+                # If there's an entity next to location
                 if ent_id_rc != 0:
                     item = list(self.items_id.keys())[list(self.items_id.values()).index(ent_id_rc)]
                     if item in self.entities:
