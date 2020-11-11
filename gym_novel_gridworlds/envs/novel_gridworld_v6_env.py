@@ -221,6 +221,7 @@ class NovelGridworldV6Env(gym.Env):
         r, c = self.agent_location
 
         reward = -1  # default reward
+        result = True
         step_cost = 0  # default step_cost
         message = ''
 
@@ -234,6 +235,9 @@ class NovelGridworldV6Env(gym.Env):
                 self.agent_location = (r, c - 1)
             elif self.agent_facing_str == 'EAST' and self.map[r][c + 1] == 0:
                 self.agent_location = (r, c + 1)
+            else:
+                result = False
+                message = 'Block in path'
 
             step_cost = 27.906975
         # Left
@@ -274,6 +278,7 @@ class NovelGridworldV6Env(gym.Env):
                     reward = -10  # break something else
                 self.inventory_items_quantity[self.block_in_front_str] += 1
             else:
+                result = False
                 message = "Cannot break " + self.block_in_front_str
 
             step_cost = 3600.0
@@ -281,15 +286,23 @@ class NovelGridworldV6Env(gym.Env):
         elif action == 4:
             reward = -1  # default reward to Place_tree_tap
 
-            if self.inventory_items_quantity['tree_tap'] >= 1 and self.block_in_front_str == 'air':
-                r, c = self.block_in_front_location
-                self.map[r][c] = self.items_id['tree_tap']  # Place_tree_tap
-                self.inventory_items_quantity['tree_tap'] -= 1
+            if self.inventory_items_quantity['tree_tap'] >= 1:
+                if self.block_in_front_str == 'air':
+                    r, c = self.block_in_front_location
+                    self.map[r][c] = self.items_id['tree_tap']  # Place_tree_tap
+                    self.inventory_items_quantity['tree_tap'] -= 1
+                    message = "Block tree_tap placed"
 
-                # Make sure that block_in_front_location is next to a tree
-                block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
-                if block_in_front_next_to_tree:
-                    reward = 20
+                    # Make sure that block_in_front_location is next to a tree
+                    block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
+                    if block_in_front_next_to_tree:
+                        reward = 20
+                else:
+                    result = False
+                    message = "Block " + self.block_in_front_str + " already exists when trying to place block"
+            else:
+                result = False
+                message = "Item not found in inventory"
 
             step_cost = 300.0
         # Extract_rubber
@@ -300,14 +313,21 @@ class NovelGridworldV6Env(gym.Env):
             # Make sure that block_in_front_location is next to a tree
             block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
 
-            if block_in_front_next_to_tree and self.block_in_front_str == 'tree_tap':
-                self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
-                reward = 15
-                step_cost = 50000
+            if self.block_in_front_str == 'tree_tap':
+                if block_in_front_next_to_tree:
+                    self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
+                    reward = 15
+                    step_cost = 50000
+                else:
+                    result = False
+                    message = "No tree_log near tree_tap"
+            else:
+                result = False
+                message = "No tree_tap found"
         # Craft
         elif action in self.action_craft_str:
             item_to_craft = '_'.join(self.action_craft_str[action].split('_')[1:])
-            reward, step_cost, message = self.craft(item_to_craft)
+            reward, result, step_cost, message = self.craft(item_to_craft)
         # Select
         elif action in self.action_select_str:
             item_to_select = '_'.join(self.action_select_str[action].split('_')[1:])
@@ -316,6 +336,7 @@ class NovelGridworldV6Env(gym.Env):
             if item_to_select in self.inventory_items_quantity and self.inventory_items_quantity[item_to_select] >= 1:
                 self.selected_item = item_to_select
             else:
+                result = False
                 message = 'Item not found in inventory'
 
         # Update after each step
@@ -328,7 +349,7 @@ class NovelGridworldV6Env(gym.Env):
             reward = 50
             done = True
 
-        info = {'step_cost': step_cost, 'message': message}
+        info = {'result': result, 'step_cost': step_cost, 'message': message}
 
         # Update after each step
         self.step_count += 1
@@ -385,6 +406,7 @@ class NovelGridworldV6Env(gym.Env):
     def craft(self, item_to_craft):
 
         reward = -1  # default reward to craft in a wrong way
+        result = True
         step_cost = 0  # default step_cost
         message = ''
 
@@ -399,6 +421,7 @@ class NovelGridworldV6Env(gym.Env):
 
         # If there is not enough ingredients in the inventory
         if False in have_all_ingredients.values():
+            result = False
             message = "Missing items: "
             if item_to_craft == 'tree_tap':
                 step_cost = 360.0
@@ -407,7 +430,7 @@ class NovelGridworldV6Env(gym.Env):
             for item in have_all_ingredients:
                 if not have_all_ingredients[item]:
                     message += str(self.recipes[item_to_craft]['input'][item]) + ' ' + item + ', '
-            return reward, step_cost, message[:-2]
+            return reward, result, step_cost, message[:-2]
         # Craft
         else:
             # If more than 1 ingredient needed, agent needs to be in front of crafting_table
@@ -418,8 +441,9 @@ class NovelGridworldV6Env(gym.Env):
                         step_cost = 720.0
                     elif item_to_craft == 'pogo_stick':
                         step_cost = 840.0
+                    result = False
                     message = 'Need to be in front of crafting_table'
-                    return reward, step_cost, message
+                    return reward, result, step_cost, message
 
             reward = 10  # default reward to craft in a good way
 
@@ -440,7 +464,7 @@ class NovelGridworldV6Env(gym.Env):
 
             message = 'Crafted ' + item_to_craft
 
-            return reward, step_cost, message
+            return reward, result, step_cost, message
 
     def add_new_items(self, new_items_quantity):
 
