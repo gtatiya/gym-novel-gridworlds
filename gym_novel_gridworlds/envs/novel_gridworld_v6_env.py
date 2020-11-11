@@ -271,12 +271,12 @@ class NovelGridworldV6Env(gym.Env):
             if self.block_in_front_str not in ['air'] + self.unbreakable_items:
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
+                self.inventory_items_quantity[self.block_in_front_str] += 1
 
                 if self.block_in_front_str == 'tree_log':
                     reward = 10
                 else:
                     reward = -10  # break something else
-                self.inventory_items_quantity[self.block_in_front_str] += 1
             else:
                 result = False
                 message = "Cannot break " + self.block_in_front_str

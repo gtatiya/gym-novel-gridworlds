@@ -108,9 +108,9 @@ class Level1AxeHard(gym.core.Wrapper):
 
         # Craft_axe
         if action == len(self.env.action_str) - 2:
-            reward, step_cost, message = self.craft('axe')
+            reward, result, step_cost, message = self.craft('axe')
             observation = self.env.get_observation()
-            info = {'step_cost': step_cost, 'message': message}
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
         # Break
@@ -126,6 +126,7 @@ class Level1AxeHard(gym.core.Wrapper):
     def craft(self, item_to_craft):
 
         reward = -1  # default reward to craft in a wrong way
+        result = True
         step_cost = 0  # default step_cost
         message = ''
 
@@ -140,6 +141,7 @@ class Level1AxeHard(gym.core.Wrapper):
 
         # If there is not enough ingredients in the inventory
         if False in have_all_ingredients.values():
+            result = False
             message = "Missing items: "
             if item_to_craft == 'tree_tap':
                 step_cost = 360.0
@@ -148,7 +150,7 @@ class Level1AxeHard(gym.core.Wrapper):
             for item in have_all_ingredients:
                 if not have_all_ingredients[item]:
                     message += str(self.env.recipes[item_to_craft]['input'][item]) + ' ' + item + ', '
-            return reward, step_cost, message[:-2]
+            return reward, result, step_cost, message[:-2]
         # Craft
         else:
             # If more than 1 ingredient needed, agent needs to be in front of crafting_table
@@ -161,8 +163,9 @@ class Level1AxeHard(gym.core.Wrapper):
                         step_cost = 840.0
                     elif item_to_craft == 'axe':
                         step_cost = 600.0
+                    result = False
                     message = 'Need to be in front of crafting_table'
-                    return reward, step_cost, message
+                    return reward, result, step_cost, message
 
             reward = 10  # default reward to craft in a good way
 
@@ -185,7 +188,7 @@ class Level1AxeHard(gym.core.Wrapper):
 
             message = 'Crafted ' + item_to_craft
 
-            return reward, step_cost, message
+            return reward, result, step_cost, message
 
 
 class Level1AxetoBreakEasy(gym.core.Wrapper):
@@ -219,24 +222,29 @@ class Level1AxetoBreakEasy(gym.core.Wrapper):
             self.env.last_action = action
 
             reward = -1  # default reward
+            result = True
             step_cost = 3600.0
             message = ''
 
             self.env.update_block_in_front()
             # If block in front is not air and wall, place the block in front in inventory
-            if self.env.block_in_front_str not in ['air'] + self.env.unbreakable_items and \
-                    self.env.inventory_items_quantity['axe'] >= 1 and self.env.selected_item == 'axe':
-                block_r, block_c = self.env.block_in_front_location
-                self.env.map[block_r][block_c] = 0
+            if self.env.block_in_front_str not in ['air'] + self.env.unbreakable_items:
+                if self.env.inventory_items_quantity['axe'] >= 1 and self.env.selected_item == 'axe':
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                if self.env.block_in_front_str == 'tree_log':
-                    reward = 10
+                    if self.env.block_in_front_str == 'tree_log':
+                        reward = 10
+                    else:
+                        reward = -10  # break something else
+
+                    step_cost = step_cost * 0.5  # 1800.0
                 else:
-                    reward = -10  # break something else
-                self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
-
-                step_cost = step_cost * 0.5  # 1800.0
+                    result = False
+                    message = "Cannot break without axe selected"
             else:
+                result = False
                 message = "Cannot break " + self.env.block_in_front_str
 
             # Update after each step
@@ -249,7 +257,7 @@ class Level1AxetoBreakEasy(gym.core.Wrapper):
                 reward = 50
                 done = True
 
-            info = {'step_cost': step_cost, 'message': message}
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
 
             # Update after each step
             self.env.step_count += 1
@@ -283,26 +291,31 @@ class Level1AxetoBreakMedium(gym.core.Wrapper):
         # Break
         if action == 3:
             self.env.last_action = action
-            
+
             reward = -1  # default reward
+            result = True
             step_cost = 3600.0
             message = ''
 
             self.env.update_block_in_front()
             # If block in front is not air and wall, place the block in front in inventory
-            if self.env.block_in_front_str not in ['air'] + self.env.unbreakable_items and \
-                    self.env.inventory_items_quantity['axe'] >= 1 and self.env.selected_item == 'axe':
-                block_r, block_c = self.env.block_in_front_location
-                self.env.map[block_r][block_c] = 0
+            if self.env.block_in_front_str not in ['air'] + self.env.unbreakable_items:
+                if self.env.inventory_items_quantity['axe'] >= 1 and self.env.selected_item == 'axe':
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                if self.env.block_in_front_str == 'tree_log':
-                    reward = 10
+                    if self.env.block_in_front_str == 'tree_log':
+                        reward = 10
+                    else:
+                        reward = -10  # break something else
+
+                    step_cost = step_cost * 0.5  # 1800.0
                 else:
-                    reward = -10  # break something else
-                self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
-
-                step_cost = step_cost * 0.5  # 1800.0
+                    result = False
+                    message = "Cannot break without axe selected"
             else:
+                result = False
                 message = "Cannot break " + self.env.block_in_front_str
 
             # Update after each step
@@ -315,7 +328,7 @@ class Level1AxetoBreakMedium(gym.core.Wrapper):
                 reward = 50
                 done = True
 
-            info = {'step_cost': step_cost, 'message': message}
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
 
             # Update after each step
             self.env.step_count += 1
