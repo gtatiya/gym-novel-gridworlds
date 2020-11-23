@@ -343,6 +343,7 @@ class Level1AxetoBreakMedium(gym.core.Wrapper):
 class Level1AxetoBreakHard(gym.core.Wrapper):
     """
     Novelty wrapper to add a new recipe and action to craft axe
+    Agent starts with ingredients to craft an axe
     When the agent crafts axe, it goes in the inventory
     Axe is required to break items
     Using axe reduces the step_cost to 50% (1800.0) when Break action is used
