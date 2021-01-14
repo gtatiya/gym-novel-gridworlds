@@ -39,6 +39,7 @@ class NovelGridworldV6Env(gym.Env):
         self.items = {'air', 'crafting_table', 'plank', 'pogo_stick', 'rubber', 'stick', 'tree_log', 'tree_tap', 'wall'}
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
         self.unbreakable_items = {'air', 'wall'}
+        self.goal_item_to_craft = 'pogo_stick'
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'tree_log': 5}
         self.inventory_items_quantity = {item: 0 for item in self.items}
@@ -348,7 +349,7 @@ class NovelGridworldV6Env(gym.Env):
         self.update_block_in_front()
 
         done = False
-        if self.inventory_items_quantity['pogo_stick'] >= 1:
+        if self.inventory_items_quantity[self.goal_item_to_craft] >= 1:
             reward = 50
             done = True
 
