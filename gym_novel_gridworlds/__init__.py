@@ -38,3 +38,13 @@ register(
     id='NovelGridworld-v6',
     entry_point='gym_novel_gridworlds.envs:NovelGridworldV6Env',
 )
+
+register(
+    id='NovelGridworld-Bow-v0',
+    entry_point='gym_novel_gridworlds.envs:BowV0Env',
+)
+
+register(
+    id='NovelGridworld-Bow-v1',
+    entry_point='gym_novel_gridworlds.envs:BowV1Env',
+)

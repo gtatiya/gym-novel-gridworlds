@@ -36,14 +36,14 @@ class NovelGridworldV6Env(gym.Env):
         self.block_in_front_str = 'air'
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
-        self.items = ['wall', 'crafting_table', 'tree_log', 'pogo_stick', 'stick', 'plank', 'rubber', 'tree_tap']
+        self.items = {'air', 'crafting_table', 'plank', 'pogo_stick', 'rubber', 'stick', 'tree_log', 'tree_tap', 'wall'}
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
-        self.unbreakable_items = ['wall']
+        self.unbreakable_items = {'air', 'wall'}
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'tree_log': 5}
         self.inventory_items_quantity = {item: 0 for item in self.items}
         self.selected_item = ''
-        self.entities = []
+        self.entities = set()
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
@@ -59,7 +59,7 @@ class NovelGridworldV6Env(gym.Env):
         self.action_str.update(self.action_craft_str)
         # Add a Select action for each item except unbreakable items
         self.action_select_str = {len(self.action_str) + i: 'Select_' + item for i, item in
-                                  enumerate(sorted(list(set(self.items) ^ set(self.unbreakable_items))))}
+                                  enumerate(sorted(list(self.items ^ self.unbreakable_items)))}
         self.action_str.update(self.action_select_str)
         self.action_space = spaces.Discrete(len(self.action_str))
 
@@ -191,7 +191,10 @@ class NovelGridworldV6Env(gym.Env):
 
         items_id = {}
         for item in sorted(items):
-            items_id[item] = len(items_id) + 1
+            if item == 'air':
+                items_id[item] = 0
+            else:
+                items_id[item] = len(items_id) + 1
 
         return items_id
 
@@ -268,7 +271,7 @@ class NovelGridworldV6Env(gym.Env):
         elif action == 3:
             self.update_block_in_front()
             # If block in front is not air and wall, place the block in front in inventory
-            if self.block_in_front_str not in ['air'] + self.unbreakable_items:
+            if self.block_in_front_str not in self.unbreakable_items:
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
                 self.inventory_items_quantity[self.block_in_front_str] += 1
@@ -469,7 +472,7 @@ class NovelGridworldV6Env(gym.Env):
     def add_new_items(self, new_items_quantity):
 
         for item in new_items_quantity:
-            self.items.append(item)
+            self.items.add(item)
             self.items_id.setdefault(item, len(self.items_id) + 1)
             self.items_quantity.update({item: new_items_quantity[item]})
         self.reset()
@@ -495,7 +498,7 @@ class NovelGridworldV6Env(gym.Env):
             if (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == 0 and (r, c + 1) != self.agent_location:
                 self.map[r][c + 1] = self.items_id[item_to_block_from]
 
-    def add_fence_around(self, item_location):
+    def add_fence_around(self, item_location, fence_name):
         """
         Add fence around the given location
         """
@@ -507,7 +510,7 @@ class NovelGridworldV6Env(gym.Env):
                 item_id_rc = self.map[r_item][c_item]
 
                 if item_id_rc == 0 and (r_item, c_item) != self.agent_location:
-                    self.map[r_item][c_item] = self.items_id['fence']
+                    self.map[r_item][c_item] = self.items_id[fence_name]
 
     def grab_entities(self, location=None):
 
@@ -546,7 +549,7 @@ class NovelGridworldV6Env(gym.Env):
             x2, y2 = 0.01, 0
 
         plt.figure(title, figsize=(9, 5))
-        plt.imshow(self.map, cMAP=color_map, vmin=0, vmax=len(self.items_id))
+        plt.imshow(self.map, cmap=color_map, vmin=0, vmax=len(self.items_id))
         plt.arrow(c, r, x2, y2, head_width=0.7, head_length=0.7, color='white')
         plt.title('NORTH', fontsize=10)
         plt.xlabel('SOUTH')
@@ -559,6 +562,7 @@ class NovelGridworldV6Env(gym.Env):
                           "Steps: " + str(self.step_count),
                           "Agent Facing: " + self.agent_facing_str,
                           "Action: " + self.action_str[self.last_action],
+                          "Selected item: " + self.selected_item,
                           "Reward: " + str(self.last_reward),
                           "Step Cost: " + str(self.last_step_cost),
                           "Done: " + str(self.last_done)])

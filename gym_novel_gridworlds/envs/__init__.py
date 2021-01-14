@@ -5,3 +5,6 @@ from gym_novel_gridworlds.envs.novel_gridworld_v3_env import NovelGridworldV3Env
 from gym_novel_gridworlds.envs.novel_gridworld_v4_env import NovelGridworldV4Env
 from gym_novel_gridworlds.envs.novel_gridworld_v5_env import NovelGridworldV5Env
 from gym_novel_gridworlds.envs.novel_gridworld_v6_env import NovelGridworldV6Env
+
+from gym_novel_gridworlds.envs.bow_v0_env import BowV0Env
+from gym_novel_gridworlds.envs.bow_v1_env import BowV1Env

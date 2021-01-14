@@ -56,5 +56,39 @@ env_key = {
         "i": 14,  # Select_stick
         "o": 15,  # Select_tree_log
         "p": 16,  # Select_tree_tap
+    },
+    'NovelGridworld-Bow-v0': {
+        "w": 0,  # Forward
+        "a": 1,  # Left
+        "d": 2,  # Right
+        "e": 3,  # Break
+        "z": 4,  # Extract_string
+        "1": 6,  # Craft_plank
+        "2": 7,  # Craft_stick
+        "3": 5,  # Craft_bow
+        "r": 8,  # Select_bow
+        "t": 9,  # Select_crafting_table
+        "y": 10,  # Select_plank
+        "u": 11,  # Select_stick
+        "i": 12,  # Select_string
+        "o": 13,  # Select_tree_log
+        "p": 14,  # Select_wool
+    },
+    'NovelGridworld-Bow-v1': {
+        "w": 0,  # Forward
+        "a": 1,  # Left
+        "d": 2,  # Right
+        "e": 3,  # Break
+        "z": 4,  # Extract_string
+        "1": 6,  # Craft_plank
+        "2": 7,  # Craft_stick
+        "3": 5,  # Craft_bow
+        "r": 8,  # Select_bow
+        "t": 9,  # Select_crafting_table
+        "y": 10,  # Select_plank
+        "u": 11,  # Select_stick
+        "i": 12,  # Select_string
+        "o": 13,  # Select_tree_log
+        "p": 14,  # Select_wool
     }
 }

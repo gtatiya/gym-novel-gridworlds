@@ -36,7 +36,7 @@ class NovelGridworldV4Env(gym.Env):
         self.block_in_front_str = 'air'
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
-        self.items = ['wall', 'crafting_table', 'tree_log', 'pogo_stick', 'stick', 'plank', 'rubber', 'tree_tap']
+        self.items = ['crafting_table', 'plank', 'pogo_stick', 'rubber', 'stick', 'tree_log', 'tree_tap', 'wall']
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'tree_log': 2}
@@ -59,7 +59,7 @@ class NovelGridworldV4Env(gym.Env):
         # Observation Space
         self.num_beams = 8
         self.max_beam_range = 40
-        self.items_lidar = ['wall', 'crafting_table', 'tree_log']
+        self.items_lidar = ['crafting_table', 'tree_log', 'wall']
         self.items_id_lidar = self.set_items_id(self.items_lidar)
         low = np.array([0] * (len(self.items_lidar) * self.num_beams) + [0] * len(self.inventory_items_quantity))
         high = np.array([self.max_beam_range] * (len(self.items_lidar) * self.num_beams) + [40] * len(
@@ -431,7 +431,7 @@ class NovelGridworldV4Env(gym.Env):
             x2, y2 = 0.01, 0
 
         plt.figure(title, figsize=(9, 5))
-        plt.imshow(self.map, cMAP=color_map, vmin=0, vmax=len(self.items_id))
+        plt.imshow(self.map, cmap=color_map, vmin=0, vmax=len(self.items_id))
         plt.arrow(c, r, x2, y2, head_width=0.7, head_length=0.7, color='white')
         plt.title('NORTH', fontsize=10)
         plt.xlabel('SOUTH')
