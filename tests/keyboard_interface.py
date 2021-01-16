@@ -6,20 +6,43 @@ import gym_novel_gridworlds
 from gym_novel_gridworlds.constant import env_key
 from gym_novel_gridworlds.wrappers import SaveTrajectories
 from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
-from gym_novel_gridworlds.novelty_wrappers import Level1AxeEasy, Level1AxeMedium, Level1AxeHard
-from gym_novel_gridworlds.novelty_wrappers import Level1AxetoBreakEasy, Level1AxetoBreakMedium, Level1AxetoBreakHard
-from gym_novel_gridworlds.novelty_wrappers import Level1Fence, BlockItem, AddItem, ReplaceItem
+from gym_novel_gridworlds.novelty_wrappers import *
 
 import keyboard
 import numpy as np
 import matplotlib.image as mpimg
 
 
+def assign_keys(env_id):
+    key_action_dict = env_key[env_id]
+
+    action_count = 1
+    for action_id in sorted(env.action_str):
+        if env.action_str[action_id].startswith('Craft'):
+            key_action_dict[str(action_count)] = action_id
+            action_count += 1
+
+    alpha_keys = 'abcdefghijklmnopqrstuvwxyz'
+    alpha_keys_idx = 0
+    for action_id in sorted(env.action_select_str):
+        while True:
+            if alpha_keys_idx < len(alpha_keys):
+                if alpha_keys[alpha_keys_idx] not in key_action_dict:
+                    key_action_dict[alpha_keys[alpha_keys_idx]] = action_id
+                    alpha_keys_idx += 1
+                    break
+                else:
+                    alpha_keys_idx += 1
+            else:
+                print("No keys left to assign")
+                break
+
+    return key_action_dict
+
 def print_play_keys(action_str):
     print("Press a key to play: ")
     for key, key_id in KEY_ACTION_DICT.items():
         print(key, ": ", action_str[key_id])
-
 
 def get_action_from_keyboard():
     while True:
@@ -35,7 +58,6 @@ def get_action_from_keyboard():
                 print("You pressed wrong key. Press Esc key to exit, OR:")
                 print_play_keys(env.action_str)
 
-
 def fix_item_location(item, location):
     result = np.where(env.map == env.items_id[item])
     if len(result) > 0:
@@ -46,81 +68,37 @@ def fix_item_location(item, location):
         env.map[location[0]][location[1]] = env.items_id[item]
 
 
-env_id = 'NovelGridworld-Bow-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0
+env_id = 'NovelGridworld-v6'  # NovelGridworld-v6, NovelGridworld-Bow-v0
 env = gym.make(env_id)
+
 # wrappers
-# env = SaveTrajectories(env, save_path="saved_trajectories")
+env = SaveTrajectories(env, save_path="saved_trajectories")
 
 # observation_wrappers
-# env = LidarInFront(env)
+# env = LidarInFront(env, num_beams=5)
 # env = AgentMap(env)
 
-KEY_ACTION_DICT = env_key[env_id]
-
 # novelty_wrappers
-novelty_name = 'additem'  # 'axe', 'axetobreak, 'fence', 'additem', 'replaceitem'
+novelty_name = ''  # axe, axetobreak, fence, additem, replaceitem
 # novelty_arg1:
 # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. paper)
 # replaceitem - any existing item (e.g. wall)
-novelty_arg1 = 'paper'
+novelty_arg1 = 'wall'
 # novelty_arg2:
-# 'replaceitem - any item name (e.g. brick)
+# replaceitem - any item name (e.g. brick)
 novelty_arg2 = 'brick'
-level, difficulty = 1, 'medium'  # easy, medium, hard
-if level == 1:
-    if difficulty == 'easy':
-        if novelty_name == 'axe':
-            env = Level1AxeEasy(env, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
-        elif novelty_name == 'axetobreak':
-            env = Level1AxetoBreakEasy(env, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
-        elif novelty_name == 'fence':
-            env = Level1Fence(env, difficulty, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg1
-        elif novelty_name == 'additem':
-            env = AddItem(env, difficulty, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg1
-        elif novelty_name == 'replaceitem':
-            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg2
-    elif difficulty == 'medium':
-        if novelty_name == 'axe':
-            env = Level1AxeMedium(env, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
-        elif novelty_name == 'axetobreak':
-            env = Level1AxetoBreakMedium(env, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
-        elif novelty_name == 'fence':
-            env = Level1Fence(env, difficulty, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg1
-        elif novelty_name == 'additem':
-            env = AddItem(env, difficulty, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg1
-        elif novelty_name == 'replaceitem':
-            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg2
-    elif difficulty == 'hard':
-        if novelty_name == 'axe':
-            env = Level1AxeHard(env, novelty_arg1)
-            KEY_ACTION_DICT.update({"5": len(KEY_ACTION_DICT)})  # Craft_axe
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
-        elif novelty_name == 'axetobreak':
-            env = Level1AxetoBreakHard(env, novelty_arg1)
-            KEY_ACTION_DICT.update({"5": len(KEY_ACTION_DICT)})  # Craft_axe
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_axe
-        elif novelty_name == 'fence':
-            env = Level1Fence(env, difficulty, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg1
-        elif novelty_name == 'additem':
-            env = AddItem(env, difficulty, novelty_arg1)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg1
-        elif novelty_name == 'replaceitem':
-            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
-            KEY_ACTION_DICT.update({"f": len(KEY_ACTION_DICT)})  # Select_novelty_arg2
+difficulty = 'medium'  # easy, medium, hard
+
+if novelty_name and novelty_arg1 and difficulty:
+    env = inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2)
 
 # env = BlockItem(env)
-# env = ReplaceItem(env, 'hard', 'crafting_table', 'brick')
+# env = ReplaceItem(env, 'easy', 'wall', 'brick')
+
+if env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1']:
+    KEY_ACTION_DICT = assign_keys(env_id)
+else:
+    KEY_ACTION_DICT = env_key[env_id]
 
 # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
 # fix_item_location('crafting_table', (3, 2))

@@ -11,14 +11,14 @@ class LidarInFront(gym.core.ObservationWrapper):
     Send several beans (self.num_beams) at equally spaced angles in 180 degrees in front of agent
     """
 
-    def __init__(self, env):
+    def __init__(self, env, num_beams=5):
         super().__init__(env)
 
         # Observation Space
-        self.num_beams = 5
+        self.num_beams = num_beams
         self.max_beam_range = int(math.sqrt(2 * (self.env.map_size - 2) ** 2))  # Hypotenuse of a square
-        low = np.ones(len(self.env.items_id) * self.env.num_beams, dtype=int)
-        high = np.array([self.env.max_beam_range] * len(self.env.items_id) * self.env.num_beams)
+        low = np.ones(len(self.env.items_id) * self.num_beams, dtype=int)
+        high = np.array([self.max_beam_range] * len(self.env.items_id) * self.num_beams)
         self.observation_space = spaces.Box(low, high, dtype=int)
 
     def get_lidarSignal(self):
@@ -32,7 +32,7 @@ class LidarInFront(gym.core.ObservationWrapper):
 
         # Shoot beams in 180 degrees in front of agent
         angles_list = np.linspace(direction_radian[self.env.agent_facing_str] - np.pi / 2,
-                                  direction_radian[self.env.agent_facing_str] + np.pi / 2, self.env.num_beams)
+                                  direction_radian[self.env.agent_facing_str] + np.pi / 2, self.num_beams)
 
         lidar_signals = []
         r, c = self.env.agent_location
@@ -41,7 +41,7 @@ class LidarInFront(gym.core.ObservationWrapper):
 
             beam_range = 1
             # beam_signal = np.zeros(len(self.env.items_id), dtype=int)
-            beam_signal = np.full(fill_value=self.env.max_beam_range, shape=len(self.env.items_id), dtype=int)
+            beam_signal = np.full(fill_value=self.max_beam_range, shape=len(self.env.items_id), dtype=int)
 
             # Keep sending longer beams until hit an object or wall
             while True:

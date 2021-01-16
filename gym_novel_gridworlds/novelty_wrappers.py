@@ -6,7 +6,7 @@ import gym
 from gym import error, spaces, utils
 
 
-class Level1AxeEasy(gym.core.Wrapper):
+class AxeEasy(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the inventory
     Using axe reduces the step_cost when Break action is used
@@ -49,7 +49,7 @@ class Level1AxeEasy(gym.core.Wrapper):
         return observation, reward, done, info
 
 
-class Level1AxeMedium(gym.core.Wrapper):
+class AxeMedium(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the map
     When the agent goes near axe, axe gets into the inventory
@@ -83,7 +83,7 @@ class Level1AxeMedium(gym.core.Wrapper):
         return observation, reward, done, info
 
 
-class Level1AxeHard(gym.core.Wrapper):
+class AxeHard(gym.core.Wrapper):
     """
     Novelty wrapper to add a new recipe and action to craft axe
     When the agent crafts axe, it goes in the inventory
@@ -204,7 +204,7 @@ class Level1AxeHard(gym.core.Wrapper):
             return reward, result, step_cost, message
 
 
-class Level1AxetoBreakEasy(gym.core.Wrapper):
+class AxetoBreakEasy(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the inventory and requiring axe to break items
     Using axe reduces the step_cost when Break action is used
@@ -295,7 +295,7 @@ class Level1AxetoBreakEasy(gym.core.Wrapper):
         return observation, reward, done, info
 
 
-class Level1AxetoBreakMedium(gym.core.Wrapper):
+class AxetoBreakMedium(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the map
     When the agent goes near axe, axe gets into the inventory
@@ -378,7 +378,7 @@ class Level1AxetoBreakMedium(gym.core.Wrapper):
         return observation, reward, done, info
 
 
-class Level1AxetoBreakHard(gym.core.Wrapper):
+class AxetoBreakHard(gym.core.Wrapper):
     """
     Novelty wrapper to add a new recipe and action to craft axe
     Agent starts with ingredients to craft an axe
@@ -572,7 +572,7 @@ class Level1AxetoBreakHard(gym.core.Wrapper):
             return reward, result, step_cost, message
 
 
-class Level1Fence(gym.core.Wrapper):
+class Fence(gym.core.Wrapper):
     """
     Novelty wrapper to add fence around items in the map
     """
@@ -583,6 +583,8 @@ class Level1Fence(gym.core.Wrapper):
         self.fence_name = fence_material + '_fence'  # oak_fence, jungle_fence
         self.env.items.add(self.fence_name)
         self.env.items_id.setdefault(self.fence_name, len(self.items_id) + 1)
+        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.fence_name})
+        self.env.action_str.update(self.env.action_select_str)
 
         if difficulty == 'easy':
             self.fence_percent_range = (20, 50)
@@ -624,13 +626,14 @@ class AddItem(gym.core.Wrapper):
         super().__init__(env)
 
         self.item_to_add = item_to_add
-        self.env.add_new_items({self.item_to_add: 1})
-        # self.env.entities.add(item_to_add)
+        self.env.items.add(self.item_to_add)
+        self.env.items_id.setdefault(self.item_to_add, len(self.items_id) + 1)
+        # self.env.entities.add(self.item_to_add)
         self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.item_to_add})
         self.env.action_str.update(self.env.action_select_str)
 
         if difficulty == 'easy':
-            self.item_percent_range = (0, 10)
+            self.item_percent_range = (1, 10)
         elif difficulty == 'medium':
             self.item_percent_range = (10, 20)
         else:
@@ -763,3 +766,43 @@ class BlockItem(gym.core.Wrapper):
                     self.env.add_fence_around((r, c))
 
         return observation, reward, done, info
+
+#################### Novelty Helper ####################
+
+def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
+
+    if difficulty == 'easy':
+        if novelty_name == 'axe':
+            env = AxeEasy(env, novelty_arg1)
+        elif novelty_name == 'axetobreak':
+            env = AxetoBreakEasy(env, novelty_arg1)
+        elif novelty_name == 'fence':
+            env = Fence(env, difficulty, novelty_arg1)
+        elif novelty_name == 'additem':
+            env = AddItem(env, difficulty, novelty_arg1)
+        elif novelty_name == 'replaceitem':
+            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
+    elif difficulty == 'medium':
+        if novelty_name == 'axe':
+            env = AxeMedium(env, novelty_arg1)
+        elif novelty_name == 'axetobreak':
+            env = AxetoBreakMedium(env, novelty_arg1)
+        elif novelty_name == 'fence':
+            env = Fence(env, difficulty, novelty_arg1)
+        elif novelty_name == 'additem':
+            env = AddItem(env, difficulty, novelty_arg1)
+        elif novelty_name == 'replaceitem':
+            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
+    elif difficulty == 'hard':
+        if novelty_name == 'axe':
+            env = AxeHard(env, novelty_arg1)
+        elif novelty_name == 'axetobreak':
+            env = AxetoBreakHard(env, novelty_arg1)
+        elif novelty_name == 'fence':
+            env = Fence(env, difficulty, novelty_arg1)
+        elif novelty_name == 'additem':
+            env = AddItem(env, difficulty, novelty_arg1)
+        elif novelty_name == 'replaceitem':
+            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
+
+    return env
