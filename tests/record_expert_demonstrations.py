@@ -48,7 +48,7 @@ def human_expert(_obs):
 
     while True:
         env.render()
-        print_play_keys(env.action_str)
+        print_play_keys(env.actions_id)
         time.sleep(0.2)
         key_pressed = keyboard.read_key()
         # return index of action if valid key is pressed

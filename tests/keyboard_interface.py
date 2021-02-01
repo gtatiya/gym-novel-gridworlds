@@ -13,36 +13,56 @@ import numpy as np
 import matplotlib.image as mpimg
 
 
-def assign_keys(env_id):
-    key_action_dict = env_key[env_id]
+def assign_keys(env_):
 
-    action_count = 1
-    for action_id in sorted(env.action_str):
-        if env.action_str[action_id].startswith('Craft'):
-            key_action_dict[str(action_count)] = action_id
-            action_count += 1
+    if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1']:
+        if env_.env_id == 'NovelGridworld-v6':
+            key_action_id_dict = {
+                "w": env_.actions_id['Forward'],  # Forward
+                "a": env_.actions_id['Left'],  # Left
+                "d": env_.actions_id['Right'],  # Right
+                "e": env_.actions_id['Break'],  # Break
+                "z": env_.actions_id['Place_tree_tap'],  # Place_tree_tap
+                "x": env_.actions_id['Extract_rubber']  # Extract_rubber
+            }
+        elif env_.env_id in ['NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1']:
+            key_action_id_dict = {
+                "w": env_.actions_id['Forward'],  # Forward
+                "a": env_.actions_id['Left'],  # Left
+                "d": env_.actions_id['Right'],  # Right
+                "e": env_.actions_id['Break'],  # Break
+                "z": env_.actions_id['Extract_string'] # Extract_string
+            }
 
-    alpha_keys = 'abcdefghijklmnopqrstuvwxyz'
-    alpha_keys_idx = 0
-    for action_id in sorted(env.action_select_str):
-        while True:
-            if alpha_keys_idx < len(alpha_keys):
-                if alpha_keys[alpha_keys_idx] not in key_action_dict:
-                    key_action_dict[alpha_keys[alpha_keys_idx]] = action_id
-                    alpha_keys_idx += 1
-                    break
+        action_count = 1
+        for action in sorted(env_.actions_id):
+            if action.startswith('Craft'):
+                key_action_id_dict[str(action_count)] = env_.actions_id[action]
+                action_count += 1
+
+        alpha_keys = 'abcdefghijklmnopqrstuvwxyz'
+        alpha_keys_idx = 0
+        for action in sorted(env_.select_actions_id):
+            while True:
+                if alpha_keys_idx < len(alpha_keys):
+                    if alpha_keys[alpha_keys_idx] not in key_action_id_dict:
+                        key_action_id_dict[alpha_keys[alpha_keys_idx]] = env_.actions_id[action]
+                        alpha_keys_idx += 1
+                        break
+                    else:
+                        alpha_keys_idx += 1
                 else:
-                    alpha_keys_idx += 1
-            else:
-                print("No keys left to assign")
-                break
+                    print("No keys left to assign")
+                    break
+    else:
+        key_action_id_dict = env_key[env_id]
 
-    return key_action_dict
+    return key_action_id_dict
 
-def print_play_keys(action_str):
+def print_play_keys(env_):
     print("Press a key to play: ")
-    for key, key_id in KEY_ACTION_DICT.items():
-        print(key, ": ", action_str[key_id])
+    for key, action_id in KEY_ACTION_DICT.items():
+        print(key, ": ", list(env_.actions_id.keys())[list(env_.actions_id.values()).index(action_id)])
 
 def get_action_from_keyboard():
     while True:
@@ -55,8 +75,7 @@ def get_action_from_keyboard():
                 print("You pressed esc, exiting!!")
                 break
             else:
-                print("You pressed wrong key. Press Esc key to exit, OR:")
-                print_play_keys(env.action_str)
+                print("You pressed wrong key. Press Esc key to exit.")
 
 def fix_item_location(item, location):
     result = np.where(env.map == env.items_id[item])
@@ -68,37 +87,36 @@ def fix_item_location(item, location):
         env.map[location[0]][location[1]] = env.items_id[item]
 
 
-env_id = 'NovelGridworld-v6'  # NovelGridworld-v6, NovelGridworld-Bow-v0
+env_id = 'NovelGridworld-Bow-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0
 env = gym.make(env_id)
 
 # wrappers
-env = SaveTrajectories(env, save_path="saved_trajectories")
+# env = SaveTrajectories(env, save_path="saved_trajectories")
 
 # observation_wrappers
 # env = LidarInFront(env, num_beams=5)
 # env = AgentMap(env)
 
 # novelty_wrappers
-novelty_name = ''  # axe, axetobreak, fence, additem, replaceitem
+novelty_name = 'remapaction'  # axe, axetobreak, fence, additem, replaceitem, remapaction
 # novelty_arg1:
 # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. paper)
 # replaceitem - any existing item (e.g. wall)
-novelty_arg1 = 'wall'
+novelty_arg1 = ''
 # novelty_arg2:
 # replaceitem - any item name (e.g. brick)
-novelty_arg2 = 'brick'
-difficulty = 'medium'  # easy, medium, hard
+novelty_arg2 = ''
+difficulty = 'hard'  # easy, medium, hard
 
-if novelty_name and novelty_arg1 and difficulty:
+if novelty_name and difficulty:
     env = inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2)
+    print("actions_id: ", env.actions_id)
 
 # env = BlockItem(env)
 # env = ReplaceItem(env, 'easy', 'wall', 'brick')
 
-if env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1']:
-    KEY_ACTION_DICT = assign_keys(env_id)
-else:
-    KEY_ACTION_DICT = env_key[env_id]
+KEY_ACTION_DICT = assign_keys(env)
+# print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
 
 # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
 # fix_item_location('crafting_table', (3, 2))
@@ -106,11 +124,11 @@ else:
 obs = env.reset()
 env.render()
 for i in range(100):
-    print_play_keys(env.action_str)
-    action = get_action_from_keyboard()  # take action from keyboard
-    observation, reward, done, info = env.step(action)
+    print_play_keys(env)
+    action_id = get_action_from_keyboard()  # take action from keyboard
+    observation, reward, done, info = env.step(action_id)
 
-    print("action: ", action, env.action_str[action])
+    print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
     print("Step: " + str(i) + ", reward: ", reward)
     print("observation: ", len(observation), observation)
 
@@ -126,9 +144,13 @@ for i in range(100):
     time.sleep(0.2)
     print("")
 
-    if i == 5:
+    if i == 2:
+        # print("action_str: ", env.actions_id)
+        # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
         # env.remap_action()
-        # print("action_str: ", env.action_str)
+        # KEY_ACTION_DICT = assign_keys(env_id)
+        # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
+
         # env.add_new_items({'rock': 3, 'axe': 1})
         # env.block_item(item_to_block='crafting_table', item_to_block_from='tree_log')
         pass

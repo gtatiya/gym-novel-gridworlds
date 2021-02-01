@@ -19,13 +19,13 @@ class NovelGridworldV6Env(gym.Env):
     """
     Goal: Craft 1 pogo_stick
     State: map, agent_location, agent_facing_id, inventory_items_quantity
-    Action: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap', 5: 'Extract_rubber',
+    Action: {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4, 'Extract_rubber': 5,
             Craft action for each recipe, Select action for each item except unbreakable items}
     """
 
     def __init__(self, env=None):
         # NovelGridworldV6Env attributes
-        self.env_name = 'NovelGridworld-v6'
+        self.env_id = 'NovelGridworld-v6'
         self.env = env  # env to restore in reset
         self.map_size = 10
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
@@ -49,22 +49,25 @@ class NovelGridworldV6Env(gym.Env):
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
         # Action Space
-        self.action_str = {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap', 5: 'Extract_rubber'}
+        self.actions_id = dict()
+        self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4,
+                                   'Extract_rubber': 5}
+        self.actions_id.update(self.manipulation_actions_id)
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
                         'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}},
                         'tree_tap': {'input': {'plank': 5, 'stick': 1}, 'output': {'tree_tap': 1}}}
         # Add a Craft action for each recipe
-        self.action_craft_str = {len(self.action_str) + i: 'Craft_' + item for i, item in
+        self.craft_actions_id = {'Craft_' + item: len(self.actions_id) + i for i, item in
                                  enumerate(sorted(self.recipes.keys()))}
-        self.action_str.update(self.action_craft_str)
+        self.actions_id.update(self.craft_actions_id)
         # Add a Select action for each item except unbreakable items
-        self.action_select_str = {len(self.action_str) + i: 'Select_' + item for i, item in
+        self.select_actions_id = {'Select_' + item: len(self.actions_id) + i for i, item in
                                   enumerate(sorted(list(self.items ^ self.unbreakable_items)))}
-        self.action_str.update(self.action_select_str)
-        self.action_space = spaces.Discrete(len(self.action_str))
+        self.actions_id.update(self.select_actions_id)
+        self.action_space = spaces.Discrete(len(self.actions_id))
 
-        self.last_action = 0  # last actions executed
+        self.last_action = 'Forward'  # last actions executed
         self.step_count = 0  # no. of steps taken
         self.last_step_cost = 0  # last received step_cost
 
@@ -80,9 +83,9 @@ class NovelGridworldV6Env(gym.Env):
 
     def reset(self, map_size=None, items_id=None, items_quantity=None):
 
-        print("RESETTING " + self.env_name + " ...")
+        print("RESETTING " + self.env_id + " ...")
         if self.env is not None:
-            print("RESTORING " + self.env_name + " ...")
+            print("RESTORING " + self.env_id + " ...")
             self.map_size = copy.deepcopy(self.env.map_size)
             self.map = copy.deepcopy(self.env.map)
             self.items_id = copy.deepcopy(self.env.items_id)
@@ -115,7 +118,7 @@ class NovelGridworldV6Env(gym.Env):
         self.selected_item = ''
         self.available_locations = []
         self.not_available_locations = []
-        self.last_action = 0  # last actions executed
+        self.last_action = 'Forward'  # last actions executed
         self.step_count = 0  # no. of steps taken
         self.last_step_cost = 0  # last received step_cost
         self.last_reward = 0  # last received reward
@@ -215,13 +218,13 @@ class NovelGridworldV6Env(gym.Env):
 
         return observation
 
-    def step(self, action):
+    def step(self, action_id):
         """
-        Actions: {0: 'Forward', 1: 'Left', 2: 'Right', 3: 'Break', 4: 'Place_tree_tap', 5: 'Extract_rubber',
+        Actions: {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4, 'Extract_rubber': 5,
             Craft action for each recipe, Select action for each item except unbreakable items}
         """
 
-        self.last_action = action
+        self.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
         r, c = self.agent_location
 
         reward = -1  # default reward
@@ -229,8 +232,7 @@ class NovelGridworldV6Env(gym.Env):
         step_cost = 0  # default step_cost
         message = ''
 
-        # Forward
-        if action == 0:
+        if action_id == self.actions_id['Forward']:
             if self.agent_facing_str == 'NORTH' and self.map[r - 1][c] == 0:
                 self.agent_location = (r - 1, c)
             elif self.agent_facing_str == 'SOUTH' and self.map[r + 1][c] == 0:
@@ -244,8 +246,7 @@ class NovelGridworldV6Env(gym.Env):
                 message = 'Block in path'
 
             step_cost = 27.906975
-        # Left
-        elif action == 1:
+        elif action_id == self.actions_id['Left']:
             if self.agent_facing_str == 'NORTH':
                 self.set_agent_facing('WEST')
             elif self.agent_facing_str == 'SOUTH':
@@ -256,8 +257,7 @@ class NovelGridworldV6Env(gym.Env):
                 self.set_agent_facing('NORTH')
 
             step_cost = 24.0
-        # Right
-        elif action == 2:
+        elif action_id == self.actions_id['Right']:
             if self.agent_facing_str == 'NORTH':
                 self.set_agent_facing('EAST')
             elif self.agent_facing_str == 'SOUTH':
@@ -268,8 +268,7 @@ class NovelGridworldV6Env(gym.Env):
                 self.set_agent_facing('SOUTH')
 
             step_cost = 24.0
-        # Break
-        elif action == 3:
+        elif action_id == self.actions_id['Break']:
             self.update_block_in_front()
             # If block in front is not air and wall, place the block in front in inventory
             if self.block_in_front_str not in self.unbreakable_items:
@@ -286,8 +285,7 @@ class NovelGridworldV6Env(gym.Env):
                 message = "Cannot break " + self.block_in_front_str
 
             step_cost = 3600.0
-        # Place_tree_tap
-        elif action == 4:
+        elif action_id == self.actions_id['Place_tree_tap']:
             reward = -1  # default reward to Place_tree_tap
 
             if self.inventory_items_quantity['tree_tap'] >= 1:
@@ -309,8 +307,7 @@ class NovelGridworldV6Env(gym.Env):
                 message = "Item not found in inventory"
 
             step_cost = 300.0
-        # Extract_rubber
-        elif action == 5:
+        elif action_id == self.actions_id['Extract_rubber']:
             reward = -1  # default reward
             step_cost = 120.0  # default step_cost
 
@@ -329,12 +326,14 @@ class NovelGridworldV6Env(gym.Env):
                 result = False
                 message = "No tree_tap found"
         # Craft
-        elif action in self.action_craft_str:
-            item_to_craft = '_'.join(self.action_craft_str[action].split('_')[1:])
+        elif action_id in self.craft_actions_id.values():
+            craft_action = list(self.craft_actions_id.keys())[list(self.craft_actions_id.values()).index(action_id)]
+            item_to_craft = '_'.join(craft_action.split('_')[1:])
             reward, result, step_cost, message = self.craft(item_to_craft)
         # Select
-        elif action in self.action_select_str:
-            item_to_select = '_'.join(self.action_select_str[action].split('_')[1:])
+        elif action_id in self.select_actions_id.values():
+            select_action = list(self.select_actions_id.keys())[list(self.select_actions_id.values()).index(action_id)]
+            item_to_select = '_'.join(select_action.split('_')[1:])
 
             step_cost = 120.0
             if item_to_select in self.inventory_items_quantity and self.inventory_items_quantity[item_to_select] >= 1:
@@ -470,6 +469,25 @@ class NovelGridworldV6Env(gym.Env):
 
             return reward, result, step_cost, message
 
+    def remap_action(self, actions_id, start_action_id):
+        """
+        Remap actions randomly
+        Start new action_id from start_action_id
+        """
+
+        while True:
+            actions = list(actions_id.keys())
+            np.random.shuffle(actions)
+            actions_id_new = {actions[i - start_action_id]: i for i in
+                              range(start_action_id, start_action_id + len(actions))}
+
+            if actions_id != actions_id_new:
+                actions_id = actions_id_new
+                print("New remapped actions: ", actions_id)
+                break
+
+        return actions_id
+
     def add_new_items(self, new_items_quantity):
 
         for item in new_items_quantity:
@@ -536,7 +554,7 @@ class NovelGridworldV6Env(gym.Env):
         color_map = "gist_ncar"
 
         if title is None:
-            title = self.env_name
+            title = self.env_id
 
         r, c = self.agent_location
         x2, y2 = 0, 0
@@ -562,7 +580,7 @@ class NovelGridworldV6Env(gym.Env):
         info = '\n'.join(["               Info:             ",
                           "Steps: " + str(self.step_count),
                           "Agent Facing: " + self.agent_facing_str,
-                          "Action: " + self.action_str[self.last_action],
+                          "Action: " + self.last_action,
                           "Selected item: " + self.selected_item,
                           "Reward: " + str(self.last_reward),
                           "Step Cost: " + str(self.last_step_cost),
@@ -571,7 +589,7 @@ class NovelGridworldV6Env(gym.Env):
         plt.text(-(self.map_size // 2) - 0.5, 2.25, info, fontsize=10, bbox=props)  # x, y
 
         if self.last_done:
-            you_win = "YOU WIN " + self.env_name + "!!!"
+            you_win = "YOU WIN " + self.env_id + "!!!"
             props = dict(boxstyle='round', facecolor='w', alpha=1)
             plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
             if self.inventory_items_quantity['pogo_stick'] >= 1:

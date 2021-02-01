@@ -20,8 +20,8 @@ class AxeEasy(gym.core.Wrapper):
         self.env.items_id.setdefault(self.axe_name, len(self.items_id) + 1)
         self.env.inventory_items_quantity.update({self.axe_name: 1})
         self.env.entities.add(self.axe_name)
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.axe_name})
-        self.env.action_str.update(self.env.action_select_str)
+        self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
 
     def reset(self):
 
@@ -31,14 +31,13 @@ class AxeEasy(gym.core.Wrapper):
 
         return obs
 
-    def step(self, action):
+    def step(self, action_id):
 
         old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
 
-        observation, reward, done, info = self.env.step(action)
+        observation, reward, done, info = self.env.step(action_id)
 
-        # Break
-        if action == 3:
+        if action_id == self.actions_id['Break']:
             if old_inventory_items_quantity != self.env.inventory_items_quantity:
                 if self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'wooden_axe':
                     info['step_cost'] = info['step_cost'] * 0.5  # 1800.0
@@ -62,17 +61,16 @@ class AxeMedium(gym.core.Wrapper):
         self.axe_name = axe_material + '_axe'  # wooden_axe, iron_axe
         self.env.add_new_items({self.axe_name: 1})
         self.env.entities.add(self.axe_name)
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.axe_name})
-        self.env.action_str.update(self.env.action_select_str)
+        self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
 
-    def step(self, action):
+    def step(self, action_id):
 
         old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
 
-        observation, reward, done, info = self.env.step(action)
+        observation, reward, done, info = self.env.step(action_id)
 
-        # Break
-        if action == 3:
+        if action_id == self.actions_id['Break']:
             if old_inventory_items_quantity != self.env.inventory_items_quantity:
                 if self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'wooden_axe':
                     info['step_cost'] = info['step_cost'] * 0.5  # 1800.0
@@ -107,26 +105,26 @@ class AxeHard(gym.core.Wrapper):
             self.env.add_new_items({'iron': 3})
             self.env.recipes.update({self.axe_name: {'input': {'stick': 2, 'iron': 3}, 'output': {self.axe_name: 1}}})
         # self.action_craft_str.update({len(self.action_str): 'Craft_' + self.axe_name})
-        self.env.action_str.update({len(self.env.action_str): 'Craft_' + self.axe_name})
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.axe_name})
-        self.env.action_str.update(self.env.action_select_str)
-        self.env.action_space = spaces.Discrete(len(self.env.action_str))
+        self.env.actions_id.update({'Craft_' + self.axe_name: len(self.env.actions_id)})
+        self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
+        self.env.action_space = spaces.Discrete(len(self.env.actions_id))
 
-    def step(self, action):
+    def step(self, action_id):
 
         old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
 
-        observation, reward, done, info = self.env.step(action)
+        observation, reward, done, info = self.env.step(action_id)
 
         # Craft___axe
-        if action == len(self.env.action_str) - 2:
+        if action_id == len(self.env.actions_id) - 2:
             reward, result, step_cost, message = self.craft(self.axe_name)
             observation = self.env.get_observation()
             info = {'result': result, 'step_cost': step_cost, 'message': message}
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
         # Break
-        elif action == 3:
+        elif action_id == self.actions_id['Break']:
             if old_inventory_items_quantity != self.env.inventory_items_quantity:
                 if self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'wooden_axe':
                     info['step_cost'] = info['step_cost'] * 0.5  # 1800.0
@@ -218,8 +216,8 @@ class AxetoBreakEasy(gym.core.Wrapper):
         self.env.items_id.setdefault(self.axe_name, len(self.items_id) + 1)
         self.env.inventory_items_quantity.update({self.axe_name: 1})
         self.env.entities.add(self.axe_name)
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.axe_name})
-        self.env.action_str.update(self.env.action_select_str)
+        self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
 
     def reset(self):
 
@@ -229,11 +227,10 @@ class AxetoBreakEasy(gym.core.Wrapper):
 
         return obs
 
-    def step(self, action):
+    def step(self, action_id):
 
-        # Break
-        if action == 3:
-            self.env.last_action = action
+        if action_id == self.actions_id['Break']:
+            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
             result = True
@@ -290,7 +287,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action)
+            observation, reward, done, info = self.env.step(action_id)
 
         return observation, reward, done, info
 
@@ -309,14 +306,13 @@ class AxetoBreakMedium(gym.core.Wrapper):
         self.axe_name = axe_material + '_axe'  # wooden_axe, iron_axe
         self.env.add_new_items({self.axe_name: 1})
         self.env.entities.add(self.axe_name)
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.axe_name})
-        self.env.action_str.update(self.env.action_select_str)
+        self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
 
-    def step(self, action):
+    def step(self, action_id):
 
-        # Break
-        if action == 3:
-            self.env.last_action = action
+        if action_id == self.actions_id['Break']:
+            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
             result = True
@@ -373,7 +369,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action)
+            observation, reward, done, info = self.env.step(action_id)
 
         return observation, reward, done, info
 
@@ -405,11 +401,11 @@ class AxetoBreakHard(gym.core.Wrapper):
         self.env.entities.add(self.axe_name)
 
         # Action Space
-        # self.action_craft_str.update({len(self.action_str): 'Craft_' + self.axe_name})
-        self.env.action_str.update({len(self.env.action_str): 'Craft_' + self.axe_name})
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.axe_name})
-        self.env.action_str.update(self.env.action_select_str)
-        self.env.action_space = spaces.Discrete(len(self.env.action_str))
+        # self.action_craft_str.update({'Craft_' + self.axe_name: len(self.action_str)})
+        self.env.actions_id.update({'Craft_' + self.axe_name: len(self.env.actions_id)})
+        self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
+        self.env.action_space = spaces.Discrete(len(self.env.actions_id))
 
     def reset(self):
 
@@ -422,10 +418,10 @@ class AxetoBreakHard(gym.core.Wrapper):
 
         return obs
 
-    def step(self, action):
+    def step(self, action_id):
 
         # Craft___axe
-        if action == len(self.env.action_str) - 2:
+        if action_id == len(self.env.actions_id) - 2:
             reward, result, step_cost, message = self.craft(self.axe_name)
             observation = self.env.get_observation()
 
@@ -441,9 +437,8 @@ class AxetoBreakHard(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
-        # Break
-        elif action == 3:
-            self.env.last_action = action
+        elif action_id == self.actions_id['Break']:
+            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
             result = True
@@ -500,7 +495,7 @@ class AxetoBreakHard(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action)
+            observation, reward, done, info = self.env.step(action_id)
 
         return observation, reward, done, info
 
@@ -583,8 +578,8 @@ class Fence(gym.core.Wrapper):
         self.fence_name = fence_material + '_fence'  # oak_fence, jungle_fence
         self.env.items.add(self.fence_name)
         self.env.items_id.setdefault(self.fence_name, len(self.items_id) + 1)
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.fence_name})
-        self.env.action_str.update(self.env.action_select_str)
+        self.env.select_actions_id.update({'Select_' + self.fence_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
 
         if difficulty == 'easy':
             self.fence_percent_range = (20, 50)
@@ -629,8 +624,8 @@ class AddItem(gym.core.Wrapper):
         self.env.items.add(self.item_to_add)
         self.env.items_id.setdefault(self.item_to_add, len(self.items_id) + 1)
         # self.env.entities.add(self.item_to_add)
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.item_to_add})
-        self.env.action_str.update(self.env.action_select_str)
+        self.env.select_actions_id.update({'Select_' + self.item_to_add: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
 
         if difficulty == 'easy':
             self.item_percent_range = (1, 10)
@@ -662,12 +657,6 @@ class AddItem(gym.core.Wrapper):
 
         return observation
 
-    def step(self, action):
-
-        observation, reward, done, info = self.env.step(action)
-
-        return observation, reward, done, info
-
 
 class ReplaceItem(gym.core.Wrapper):
     """
@@ -687,8 +676,8 @@ class ReplaceItem(gym.core.Wrapper):
         self.env.items.add(self.item_to_replace_with)
         self.env.items_id.setdefault(self.item_to_replace_with, len(self.items_id) + 1)
         # self.env.entities.add(self.item_to_replace_with)
-        self.env.action_select_str.update({len(self.env.action_str): 'Select_' + self.item_to_replace_with})
-        self.env.action_str.update(self.env.action_select_str)
+        self.env.select_actions_id.update({'Select_' + self.item_to_replace_with: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
 
         if self.item_to_replace == 'wall':
             self.env.unbreakable_items.add(self.item_to_replace_with)
@@ -724,11 +713,29 @@ class ReplaceItem(gym.core.Wrapper):
 
         return observation
 
-    def step(self, action):
 
-        observation, reward, done, info = self.env.step(action)
+def remap_action_difficulty(env, difficulty='hard'):
+    """
+    Remap actions randomly
 
-        return observation, reward, done, info
+    """
+
+    if difficulty == 'easy':
+        env.manipulation_actions_id = env.remap_action(env.manipulation_actions_id, 0)
+        env.actions_id.update(env.manipulation_actions_id)
+    elif difficulty == 'medium':
+        env.manipulation_actions_id = env.remap_action(env.manipulation_actions_id, 0)
+        env.craft_actions_id = env.remap_action(env.craft_actions_id, len(env.manipulation_actions_id))
+        env.actions_id.update(env.manipulation_actions_id)
+        env.actions_id.update(env.craft_actions_id)
+    else:
+        env.actions_id = env.remap_action(env.actions_id, 0)
+        env.craft_actions_id = {action: env.actions_id[action] for action in env.actions_id if
+                                action.startswith('Craft')}
+        env.select_actions_id = {action: env.actions_id[action] for action in env.actions_id if
+                                 action.startswith('Select')}
+
+    return env
 
 
 # Novelty without difficulty types:
@@ -747,14 +754,14 @@ class BlockItem(gym.core.Wrapper):
         self.env.items.add('fence')
         self.env.items_id.setdefault('fence', len(self.items_id) + 1)
 
-    def step(self, action):
+    def step(self, action_id):
 
         old_rubber_quantity = copy.deepcopy(self.env.inventory_items_quantity['rubber'])
 
-        observation, reward, done, info = self.env.step(action)
+        observation, reward, done, info = self.env.step(action_id)
 
         # Extract_rubber
-        if action == 5:
+        if action_id == self.actions_id['Extract_rubber']:
             if old_rubber_quantity < self.env.inventory_items_quantity['rubber']:
                 # Block by self.item_to_block_from
                 # self.env.block_items(item_to_block=self.items_to_block, item_to_block_from=self.item_to_block_from)
@@ -782,6 +789,8 @@ def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
             env = AddItem(env, difficulty, novelty_arg1)
         elif novelty_name == 'replaceitem':
             env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
+        elif novelty_name == 'remapaction':
+            env = remap_action_difficulty(env, difficulty)
     elif difficulty == 'medium':
         if novelty_name == 'axe':
             env = AxeMedium(env, novelty_arg1)
@@ -793,6 +802,8 @@ def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
             env = AddItem(env, difficulty, novelty_arg1)
         elif novelty_name == 'replaceitem':
             env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
+        elif novelty_name == 'remapaction':
+            env = remap_action_difficulty(env, difficulty)
     elif difficulty == 'hard':
         if novelty_name == 'axe':
             env = AxeHard(env, novelty_arg1)
@@ -804,5 +815,7 @@ def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
             env = AddItem(env, difficulty, novelty_arg1)
         elif novelty_name == 'replaceitem':
             env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
+        elif novelty_name == 'remapaction':
+            env = remap_action_difficulty(env, difficulty)
 
     return env

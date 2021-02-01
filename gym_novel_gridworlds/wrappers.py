@@ -39,7 +39,7 @@ class SaveTrajectories(gym.core.Wrapper):
                  "items_quantity": self.env.items_quantity,
                  "inventory_items_quantity": self.env.inventory_items_quantity,
 
-                 "action_str": self.env.action_str,
+                 "action_str": self.env.actions_id,
                  "last_action": self.env.last_action,
 
                  "last_done": self.last_done}
@@ -49,7 +49,7 @@ class SaveTrajectories(gym.core.Wrapper):
     def save(self):
 
         path = os.path.join(self.save_path,
-                            datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + "_{env}.bin".format(env=self.env.env_name))
+                            datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + "_{env}.bin".format(env=self.env.env_id))
 
         f = open(path, 'wb')
         pickle.dump(self.state_trajectories, f)

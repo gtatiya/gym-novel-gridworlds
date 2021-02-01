@@ -19,10 +19,10 @@ print("sample:", env.observation_space.sample(), env.action_space.sample())
 # env.map_size = 7
 obs = env.reset()
 for i in range(50):
-    action = env.action_space.sample()  # take a random action
-    print("action: ", action, env.action_str[action])
+    action_id = env.action_space.sample()  # take a random action
+    print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
     # print("agent_location: ", env.agent_location)
-    observation, reward, done, info = env.step(action)
+    observation, reward, done, info = env.step(action_id)
     env.render()
     print("Step: " + str(i) + ", reward: ", reward)
     print("observation: ", observation)
