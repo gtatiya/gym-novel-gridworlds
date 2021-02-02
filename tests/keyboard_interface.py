@@ -15,8 +15,8 @@ import matplotlib.image as mpimg
 
 def assign_keys(env_):
 
-    if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1']:
-        if env_.env_id == 'NovelGridworld-v6':
+    if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1']:
+        if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1']:
             key_action_id_dict = {
                 "w": env_.actions_id['Forward'],  # Forward
                 "a": env_.actions_id['Left'],  # Left
@@ -87,7 +87,7 @@ def fix_item_location(item, location):
         env.map[location[0]][location[1]] = env.items_id[item]
 
 
-env_id = 'NovelGridworld-Bow-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0
+env_id = 'NovelGridworld-Pogostick-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
 env = gym.make(env_id)
 
 # wrappers
@@ -98,7 +98,7 @@ env = gym.make(env_id)
 # env = AgentMap(env)
 
 # novelty_wrappers
-novelty_name = 'remapaction'  # axe, axetobreak, fence, additem, replaceitem, remapaction
+novelty_name = ''  # axe, axetobreak, fence, additem, replaceitem, remapaction
 # novelty_arg1:
 # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. paper)
 # replaceitem - any existing item (e.g. wall)
@@ -110,7 +110,7 @@ difficulty = 'hard'  # easy, medium, hard
 
 if novelty_name and difficulty:
     env = inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2)
-    print("actions_id: ", env.actions_id)
+    # print("actions_id: ", env.actions_id)
 
 # env = BlockItem(env)
 # env = ReplaceItem(env, 'easy', 'wall', 'brick')
