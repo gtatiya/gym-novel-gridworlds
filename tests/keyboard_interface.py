@@ -4,7 +4,7 @@ import time
 import gym
 import gym_novel_gridworlds
 from gym_novel_gridworlds.constant import env_key
-from gym_novel_gridworlds.wrappers import SaveTrajectories
+from gym_novel_gridworlds.wrappers import SaveTrajectories, LimitActions
 from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
 from gym_novel_gridworlds.novelty_wrappers import *
 
@@ -15,38 +15,35 @@ import matplotlib.image as mpimg
 
 def assign_keys(env_):
 
+    if hasattr(env_, 'limited_actions_id'):
+        actions_id = env_.limited_actions_id
+    else:
+        actions_id = env_.actions_id
+
+    actions_key = {'Forward': 'w', 'Left': 'a', 'Right': 'd', 'Break': 'e', 'Place_tree_tap': 'z', 'Extract_rubber': 'x',
+                   'Extract_string': 'x'}
+
     if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1']:
-        if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1']:
-            key_action_id_dict = {
-                "w": env_.actions_id['Forward'],  # Forward
-                "a": env_.actions_id['Left'],  # Left
-                "d": env_.actions_id['Right'],  # Right
-                "e": env_.actions_id['Break'],  # Break
-                "z": env_.actions_id['Place_tree_tap'],  # Place_tree_tap
-                "x": env_.actions_id['Extract_rubber']  # Extract_rubber
-            }
-        elif env_.env_id in ['NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1']:
-            key_action_id_dict = {
-                "w": env_.actions_id['Forward'],  # Forward
-                "a": env_.actions_id['Left'],  # Left
-                "d": env_.actions_id['Right'],  # Right
-                "e": env_.actions_id['Break'],  # Break
-                "z": env_.actions_id['Extract_string'] # Extract_string
-            }
+        key_action_id_dict = {}
+        for action in actions_key:
+            if action in actions_id:
+                key_action_id_dict[actions_key[action]] = actions_id[action]
 
         action_count = 1
-        for action in sorted(env_.actions_id):
+        for action in sorted(actions_id):
             if action.startswith('Craft'):
-                key_action_id_dict[str(action_count)] = env_.actions_id[action]
+                key_action_id_dict[str(action_count)] = actions_id[action]
                 action_count += 1
 
         alpha_keys = 'abcdefghijklmnopqrstuvwxyz'
         alpha_keys_idx = 0
         for action in sorted(env_.select_actions_id):
+            if action not in actions_id:
+                continue
             while True:
                 if alpha_keys_idx < len(alpha_keys):
                     if alpha_keys[alpha_keys_idx] not in key_action_id_dict:
-                        key_action_id_dict[alpha_keys[alpha_keys_idx]] = env_.actions_id[action]
+                        key_action_id_dict[alpha_keys[alpha_keys_idx]] = actions_id[action]
                         alpha_keys_idx += 1
                         break
                     else:
@@ -60,9 +57,15 @@ def assign_keys(env_):
     return key_action_id_dict
 
 def print_play_keys(env_):
+
+    if hasattr(env_, 'limited_actions_id'):
+        actions_id = env_.limited_actions_id
+    else:
+        actions_id = env_.actions_id
+
     print("Press a key to play: ")
     for key, action_id in KEY_ACTION_DICT.items():
-        print(key, ": ", list(env_.actions_id.keys())[list(env_.actions_id.values()).index(action_id)])
+        print(key, ": ", list(actions_id.keys())[list(actions_id.values()).index(action_id)])
 
 def get_action_from_keyboard():
     while True:
@@ -87,11 +90,12 @@ def fix_item_location(item, location):
         env.map[location[0]][location[1]] = env.items_id[item]
 
 
-env_id = 'NovelGridworld-Pogostick-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
+env_id = 'NovelGridworld-Bow-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
 env = gym.make(env_id)
 
 # wrappers
 # env = SaveTrajectories(env, save_path="saved_trajectories")
+env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
 
 # observation_wrappers
 # env = LidarInFront(env, num_beams=5)
@@ -117,6 +121,8 @@ if novelty_name and difficulty:
 
 KEY_ACTION_DICT = assign_keys(env)
 # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
+# print("action_space:", env.action_space)
+# print("action_space.sample(): ", env.action_space.sample())
 
 # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
 # fix_item_location('crafting_table', (3, 2))

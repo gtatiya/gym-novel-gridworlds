@@ -18,9 +18,8 @@ class SaveTrajectories(gym.core.Wrapper):
         os.makedirs(self.save_path, exist_ok=True)
         self.state_trajectories = []
 
-    def step(self, action):
-
-        obs, reward, done, info = self.env.step(action)
+    def step(self, action_id):
+        obs, reward, done, info = self.env.step(action_id)
 
         state = self.get_state()
         self.state_trajectories.append(state)
@@ -28,7 +27,6 @@ class SaveTrajectories(gym.core.Wrapper):
         return obs, reward, done, info
 
     def get_state(self):
-
         state = {"map_size": self.env.map_size,
                  "map": self.env.map,
                  "agent_location": self.env.agent_location,
@@ -47,7 +45,6 @@ class SaveTrajectories(gym.core.Wrapper):
         return state
 
     def save(self):
-
         path = os.path.join(self.save_path,
                             datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + "_{env}.bin".format(env=self.env.env_id))
 
@@ -55,3 +52,31 @@ class SaveTrajectories(gym.core.Wrapper):
         pickle.dump(self.state_trajectories, f)
         f.close()
         print("Trajectories saved at: ", path)
+
+
+class LimitActions(gym.core.Wrapper):
+    """
+    Wrapper to limit the actions in the environment
+    limited_actions: set of actions to use
+    """
+
+    def __init__(self, env, limited_actions):
+        super().__init__(env)
+
+        self.limited_actions = limited_actions
+        self.limited_actions_id = {action: i for i, action in enumerate(self.limited_actions)}
+        self.action_space = spaces.Discrete(len(self.limited_actions_id))
+
+    def step(self, action_id):
+
+        assert action_id in self.limited_actions_id.values(), "Action ID " + str(action_id) + " is not valid, max " \
+                                                                                              "action ID is " + str(
+            len(self.limited_actions_id)-1)
+        last_action = list(self.limited_actions_id.keys())[list(self.limited_actions_id.values()).index(action_id)]
+
+        assert last_action in self.actions_id, last_action + " is not a valid action for " + self.env_id
+        action_id = self.actions_id[last_action]
+
+        obs, reward, done, info = self.env.step(action_id)
+
+        return obs, reward, done, info
