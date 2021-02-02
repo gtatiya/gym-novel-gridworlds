@@ -194,11 +194,10 @@ class NovelGridworldV6Env(gym.Env):
     def set_items_id(self, items):
 
         items_id = {}
+        items_id['air'] = 0
         for item in sorted(items):
-            if item == 'air':
-                items_id[item] = 0
-            else:
-                items_id[item] = len(items_id) + 1
+            if item != 'air':
+                items_id[item] = len(items_id)
 
         return items_id
 
