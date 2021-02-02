@@ -83,7 +83,7 @@ class PogostickV0Env(gym.Env):
 
     def reset(self, map_size=None, items_id=None, items_quantity=None):
 
-        print("RESETTING " + self.env_id + " ...")
+        # print("RESETTING " + self.env_id + " ...")
         if self.env is not None:
             print("RESTORING " + self.env_id + " ...")
             self.map_size = copy.deepcopy(self.env.map_size)
