@@ -48,3 +48,13 @@ register(
     id='NovelGridworld-Bow-v1',
     entry_point='gym_novel_gridworlds.envs:BowV1Env',
 )
+
+register(
+    id='NovelGridworld-Pogostick-v0',
+    entry_point='gym_novel_gridworlds.envs:PogostickV0Env',
+)
+
+register(
+    id='NovelGridworld-Pogostick-v1',
+    entry_point='gym_novel_gridworlds.envs:PogostickV1Env',
+)
