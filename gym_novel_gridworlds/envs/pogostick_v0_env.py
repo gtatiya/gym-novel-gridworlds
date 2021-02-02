@@ -223,7 +223,8 @@ class PogostickV0Env(gym.Env):
     def set_items_id(self, items):
 
         items_id = {}
-        items_id['air'] = 0
+        if 'air' in items:
+            items_id['air'] = 0
         for item in sorted(items):
             if item != 'air':
                 items_id[item] = len(items_id)

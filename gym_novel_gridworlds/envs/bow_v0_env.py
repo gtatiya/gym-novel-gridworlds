@@ -36,7 +36,7 @@ class BowV0Env(gym.Env):
         self.block_in_front_str = 'air'
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
-        self.items = {'air', 'bow', 'crafting_table', 'plank', 'stick', 'string', 'tree_log', 'wall', 'wool'}
+        self.items = {'air', 'bow', 'crafting_table', 'stick', 'string', 'wall'}
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
         self.unbreakable_items = {'air', 'wall'}
         self.goal_item_to_craft = 'bow'
@@ -192,7 +192,8 @@ class BowV0Env(gym.Env):
     def set_items_id(self, items):
 
         items_id = {}
-        items_id['air'] = 0
+        if 'air' in items:
+            items_id['air'] = 0
         for item in sorted(items):
             if item != 'air':
                 items_id[item] = len(items_id)
