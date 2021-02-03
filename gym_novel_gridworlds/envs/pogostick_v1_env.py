@@ -51,7 +51,7 @@ class PogostickV1Env(gym.Env):
         # Action Space
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4,
-                                   'Extract_rubber': 5}
+                                        'Extract_rubber': 5}
         self.actions_id.update(self.manipulation_actions_id)
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
@@ -186,10 +186,6 @@ class PogostickV1Env(gym.Env):
 
         self.agent_facing_str = direction_str
         self.agent_facing_id = self.direction_id[self.agent_facing_str]
-
-        '''
-        self.agent_facing_str = list(self.direction_id.keys())[list(self.direction_id.values()).index(self.agent_facing_id)]
-        '''
 
     def set_items_id(self, items):
 

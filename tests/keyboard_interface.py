@@ -95,7 +95,7 @@ env = gym.make(env_id)
 
 # wrappers
 # env = SaveTrajectories(env, save_path="saved_trajectories")
-env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
+# env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
 
 # observation_wrappers
 # env = LidarInFront(env, num_beams=5)

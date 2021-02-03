@@ -9,7 +9,8 @@ from gym import error, spaces, utils
 
 class LidarInFront(gym.core.ObservationWrapper):
     """
-    Send several beans (self.num_beams) at equally spaced angles in 180 degrees in front of agent + agent's current inventory
+    Send several beans (self.num_beams) at equally spaced angles in 180 degrees in front of agent + agent's current
+    inventory
     """
 
     def __init__(self, env, num_beams=5):
@@ -18,12 +19,12 @@ class LidarInFront(gym.core.ObservationWrapper):
         # Observation Space
         items_to_exclude = ['air', self.goal_item_to_craft]       
         self.lidar_items = copy.deepcopy(self.env.items_id)
-        list(map(self.lidar_items.pop, items_to_exclude)) # remove air and final goal object from the list of lidar items
-        self.lidar_items_id = self.set_items_id(self.lidar_items) # set IDs for all the lidar items
+        list(map(self.lidar_items.pop, items_to_exclude))  # remove air and goal_item_to_craft from the lidar_items
+        self.lidar_items_id = self.set_items_id(self.lidar_items)  # set IDs for all the lidar items
         self.num_beams = num_beams
         self.max_beam_range = int(math.sqrt(2 * (self.env.map_size - 2) ** 2))  # Hypotenuse of a square
         low = np.zeros(len(self.lidar_items) * self.num_beams + len(self.inventory_items_quantity), dtype=int)
-        high = np.array([self.max_beam_range] * len(self.lidar_items) * self.num_beams + [20] * len(self.inventory_items_quantity)) # 20 denotes the maximum quantity of any item in the inventory
+        high = np.array([self.max_beam_range] * len(self.lidar_items) * self.num_beams + [20] * len(self.inventory_items_quantity))  # 20 denotes the maximum quantity of any item in the inventory
         self.observation_space = spaces.Box(low, high, dtype=int)
 
     def get_lidarSignal(self):

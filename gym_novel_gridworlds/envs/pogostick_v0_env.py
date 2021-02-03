@@ -51,7 +51,7 @@ class PogostickV0Env(gym.Env):
         # Action Space
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4,
-                                   'Extract_rubber': 5}
+                                        'Extract_rubber': 5}
         self.actions_id.update(self.manipulation_actions_id)
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
@@ -163,17 +163,17 @@ class PogostickV0Env(gym.Env):
 
             direction = np.random.choice(list(self.direction_id.keys()))
             r, c = result[0][0], result[1][0]
-            # NORTH
-            if direction == 'NORTH' and (0 <= (r - 1) <= self.map_size - 1) and self.map[r - 1][c] == 0 and (r - 1, c) != self.agent_location:
+            if direction == 'NORTH' and (0 <= (r - 1) <= self.map_size - 1) and self.map[r - 1][c] == 0 and (
+                    r - 1, c) != self.agent_location:
                 self.map[r - 1][c] = self.items_id['tree_tap']
-            # SOUTH
-            if direction == 'SOUTH' and (0 <= (r + 1) <= self.map_size - 1) and self.map[r + 1][c] == 0 and (r + 1, c) != self.agent_location:
+            if direction == 'SOUTH' and (0 <= (r + 1) <= self.map_size - 1) and self.map[r + 1][c] == 0 and (
+                    r + 1, c) != self.agent_location:
                 self.map[r + 1][c] = self.items_id['tree_tap']
-            # WEST
-            if direction == 'WEST' and (0 <= (c - 1) <= self.map_size - 1) and self.map[r][c - 1] == 0 and (r, c - 1) != self.agent_location:
+            if direction == 'WEST' and (0 <= (c - 1) <= self.map_size - 1) and self.map[r][c - 1] == 0 and (
+                    r, c - 1) != self.agent_location:
                 self.map[r][c - 1] = self.items_id['tree_tap']
-            # EAST
-            if direction == 'EAST' and (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == 0 and (r, c + 1) != self.agent_location:
+            if direction == 'EAST' and (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == 0 and (
+                    r, c + 1) != self.agent_location:
                 self.map[r][c + 1] = self.items_id['tree_tap']
 
             if len(np.where(self.map == self.items_id['tree_tap'])[0]) > 0:
@@ -215,10 +215,6 @@ class PogostickV0Env(gym.Env):
 
         self.agent_facing_str = direction_str
         self.agent_facing_id = self.direction_id[self.agent_facing_str]
-
-        '''
-        self.agent_facing_str = list(self.direction_id.keys())[list(self.direction_id.values()).index(self.agent_facing_id)]
-        '''
 
     def set_items_id(self, items):
 

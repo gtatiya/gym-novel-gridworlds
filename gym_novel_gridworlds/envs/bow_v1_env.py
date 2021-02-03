@@ -185,10 +185,6 @@ class BowV1Env(gym.Env):
         self.agent_facing_str = direction_str
         self.agent_facing_id = self.direction_id[self.agent_facing_str]
 
-        '''
-        self.agent_facing_str = list(self.direction_id.keys())[list(self.direction_id.values()).index(self.agent_facing_id)]
-        '''
-
     def set_items_id(self, items):
 
         items_id = {}
