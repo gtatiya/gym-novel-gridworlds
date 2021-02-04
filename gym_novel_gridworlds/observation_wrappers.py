@@ -72,8 +72,8 @@ class LidarInFront(gym.core.ObservationWrapper):
         """
 
         lidar_signals = self.get_lidarSignal()
-        observation = lidar_signals + [self.inventory_items_quantity[item] for item in
-                                       sorted(self.inventory_items_quantity)]
+        observation = lidar_signals + [self.inventory_items_quantity[item] for item in sorted(self.inventory_items_quantity)
+                                       if item not in self.unbreakable_items]
         
         return np.array(observation)
 
