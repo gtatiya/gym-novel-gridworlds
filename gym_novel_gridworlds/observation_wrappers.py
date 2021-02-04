@@ -13,7 +13,7 @@ class LidarInFront(gym.core.ObservationWrapper):
     inventory
     """
 
-    def __init__(self, env, num_beams=5):
+    def __init__(self, env, num_beams=8):
         super().__init__(env)
 
         # Observation Space
@@ -72,7 +72,8 @@ class LidarInFront(gym.core.ObservationWrapper):
         """
 
         lidar_signals = self.get_lidarSignal()
-        observation = lidar_signals + list(self.inventory_items_quantity.values())
+        observation = lidar_signals + [self.inventory_items_quantity[item] for item in
+                                       sorted(self.inventory_items_quantity)]
         
         return np.array(observation)
 

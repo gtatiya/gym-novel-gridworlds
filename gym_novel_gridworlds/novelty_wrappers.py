@@ -774,9 +774,73 @@ class BlockItem(gym.core.Wrapper):
 
         return observation, reward, done, info
 
+
+class AddChopAction(gym.core.Wrapper):
+    """
+    Novelty wrapper to add chop action
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+
+        self.env.manipulation_actions_id['chop'] = len(self.actions_id)
+        self.env.actions_id.update(self.manipulation_actions_id)
+        self.action_space = spaces.Discrete(len(self.actions_id))
+
+    def step(self, action_id):
+
+        if action_id == self.actions_id['chop']:
+
+            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+
+            reward = -1  # default reward
+            result = True
+            step_cost = 3600.0 * 1.2
+            message = ''
+
+            self.env.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if self.block_in_front_str not in self.unbreakable_items:
+                block_r, block_c = self.block_in_front_location
+                self.map[block_r][block_c] = 0
+                self.inventory_items_quantity[self.block_in_front_str] += 1 * 2
+
+                if self.block_in_front_str == 'tree_log':
+                    reward = 10
+                else:
+                    reward = -10  # break something else
+            else:
+                result = False
+                message = "Cannot chop " + self.block_in_front_str
+
+            # Update after each step
+            self.env.grab_entities()
+            observation = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = 50
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            observation, reward, done, info = self.env.step(action_id)
+
+        return observation, reward, done, info
+
 #################### Novelty Helper ####################
 
 def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
+
+    if novelty_name == 'addchop':
+        return AddChopAction(env)
 
     if difficulty == 'easy':
         if novelty_name == 'axe':

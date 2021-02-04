@@ -154,7 +154,7 @@ class NovelGridworldV1Env(gym.Env):
         r, c = self.agent_location
         for angle in angles_list:
             x_ratio, y_ratio = np.round(np.cos(angle), 2), np.round((np.sin(angle)), 2)
-            beam_signal = np.zeros(len(self.items_id_lidar), dtype=int)#
+            beam_signal = np.zeros(len(self.items_id_lidar), dtype=int)
 
             # Keep sending longer beams until hit an object or wall
             for beam_range in range(1, self.max_beam_range+1):

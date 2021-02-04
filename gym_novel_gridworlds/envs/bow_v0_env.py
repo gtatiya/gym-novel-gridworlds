@@ -52,9 +52,7 @@ class BowV0Env(gym.Env):
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Extract_string': 4}
         self.actions_id.update(self.manipulation_actions_id)
-        self.recipes = {'bow': {'input': {'stick': 3, 'string': 3}, 'output': {'bow': 1}},
-                        'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
-                        'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}}}
+        self.recipes = {'bow': {'input': {'stick': 3, 'string': 3}, 'output': {'bow': 1}}}
         # Add a Craft action for each recipe
         self.craft_actions_id = {'Craft_' + item: len(self.actions_id) + i for i, item in
                                  enumerate(sorted(self.recipes.keys()))}
@@ -191,8 +189,10 @@ class BowV0Env(gym.Env):
         if 'air' in items:
             items_id['air'] = 0
         for item in sorted(items):
-            if item != 'air':
+            if 'air' in items:
                 items_id[item] = len(items_id)
+            else:
+                items_id[item] = len(items_id) + 1
 
         return items_id
 

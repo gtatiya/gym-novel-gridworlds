@@ -10,7 +10,8 @@ from gym_novel_gridworlds.novelty_wrappers import *
 
 import keyboard
 import numpy as np
-import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+plt.rcParams['keymap.quit'].pop(plt.rcParams['keymap.quit'].index('q'))
 
 
 def assign_keys(env_):
@@ -20,8 +21,8 @@ def assign_keys(env_):
     else:
         actions_id = env_.actions_id
 
-    actions_key = {'Forward': 'w', 'Left': 'a', 'Right': 'd', 'Break': 'e', 'Place_tree_tap': 'z', 'Extract_rubber': 'x',
-                   'Extract_string': 'x'}
+    actions_key = {'Forward': 'w', 'Left': 'a', 'Right': 'd', 'Break': 'e', 'chop': 'q',
+                   'Place_tree_tap': 'z', 'Extract_rubber': 'x', 'Extract_string': 'x'}
 
     if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1']:
         key_action_id_dict = {}
@@ -98,11 +99,11 @@ env = gym.make(env_id)
 # env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
 
 # observation_wrappers
-# env = LidarInFront(env, num_beams=5)
+# env = LidarInFront(env, num_beams=8)
 # env = AgentMap(env)
 
 # novelty_wrappers
-novelty_name = ''  # axe, axetobreak, fence, additem, replaceitem, remapaction
+novelty_name = ''  # axe, axetobreak, fence, additem, replaceitem, remapaction, addchop
 # novelty_arg1:
 # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. paper)
 # replaceitem - any existing item (e.g. wall)
@@ -112,7 +113,7 @@ novelty_arg1 = ''
 novelty_arg2 = ''
 difficulty = 'hard'  # easy, medium, hard
 
-if novelty_name and difficulty:
+if novelty_name:
     env = inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2)
     # print("actions_id: ", env.actions_id)
 

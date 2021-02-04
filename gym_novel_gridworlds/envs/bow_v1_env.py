@@ -191,8 +191,10 @@ class BowV1Env(gym.Env):
         if 'air' in items:
             items_id['air'] = 0
         for item in sorted(items):
-            if item != 'air':
+            if 'air' in items:
                 items_id[item] = len(items_id)
+            else:
+                items_id[item] = len(items_id) + 1
 
         return items_id
 
