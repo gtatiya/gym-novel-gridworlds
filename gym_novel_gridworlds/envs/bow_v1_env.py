@@ -287,7 +287,7 @@ class BowV1Env(gym.Env):
             step_cost = 120.0  # default step_cost
 
             if self.block_in_front_str == 'wool':
-                self.inventory_items_quantity['string'] += 4  # Extract_rubber
+                self.inventory_items_quantity['string'] += 4  # Extract_string
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
                 reward = 15
@@ -553,13 +553,15 @@ class BowV1Env(gym.Env):
         plt.text(-(self.map_size // 2) - 0.5, 2.25, info, fontsize=10, bbox=props)  # x, y
 
         if self.last_done:
-            you_win = "YOU WIN " + self.env_id + "!!!"
-            props = dict(boxstyle='round', facecolor='w', alpha=1)
-            plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
-            if self.inventory_items_quantity['bow'] >= 1:
-                you_win = "YOU CRAFTED " + self.goal_item_to_craft.upper() + "!!!"
+            if self.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                you_win = "YOU WIN " + self.env_id + "!!!"
+                you_win += "\nYOU CRAFTED " + self.goal_item_to_craft.upper() + "!!!"
                 props = dict(boxstyle='round', facecolor='w', alpha=1)
-                plt.text(0 - 0.1, (self.map_size // 2) + 1, you_win, fontsize=18, bbox=props)
+                plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
+            else:
+                you_win = "YOU CAN'T WIN " + self.env_id + "!!!"
+                props = dict(boxstyle='round', facecolor='w', alpha=1)
+                plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
 
         cmap = get_cmap(color_map)
 

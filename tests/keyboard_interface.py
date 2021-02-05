@@ -57,7 +57,7 @@ def assign_keys(env_):
 
     return key_action_id_dict
 
-def print_play_keys(env_):
+def print_play_keys(env_, key_action_dict):
 
     if hasattr(env_, 'limited_actions_id'):
         actions_id = env_.limited_actions_id
@@ -65,16 +65,16 @@ def print_play_keys(env_):
         actions_id = env_.actions_id
 
     print("Press a key to play: ")
-    for key, action_id in KEY_ACTION_DICT.items():
+    for key, action_id in key_action_dict.items():
         print(key, ": ", list(actions_id.keys())[list(actions_id.values()).index(action_id)])
 
-def get_action_from_keyboard():
+def get_action_from_keyboard(key_action_dict):
     while True:
         key_pressed = keyboard.read_key()
         # return index of action if valid key is pressed
         if key_pressed:
-            if key_pressed in KEY_ACTION_DICT:
-                return KEY_ACTION_DICT[key_pressed]
+            if key_pressed in key_action_dict:
+                return key_action_dict[key_pressed]
             elif key_pressed == "esc":
                 print("You pressed esc, exiting!!")
                 break
@@ -91,83 +91,83 @@ def fix_item_location(item, location):
         env.map[location[0]][location[1]] = env.items_id[item]
 
 
-env_id = 'NovelGridworld-Bow-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
-env = gym.make(env_id)
+if __name__ == "__main__":
+    env_id = 'NovelGridworld-Pogostick-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
+    env = gym.make(env_id)
 
-# wrappers
-# env = SaveTrajectories(env, save_path="saved_trajectories")
-# env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
+    # wrappers
+    # env = SaveTrajectories(env, save_path="saved_trajectories")
+    # env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
 
-# observation_wrappers
-# env = LidarInFront(env, num_beams=8)
-# env = AgentMap(env)
+    # observation_wrappers
+    # env = LidarInFront(env, num_beams=8)
+    # env = AgentMap(env)
 
-# novelty_wrappers
-novelty_name = ''  # axe, axetobreak, fence, additem, replaceitem, remapaction, addchop
-# novelty_arg1:
-# axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. paper)
-# replaceitem - any existing item (e.g. wall)
-novelty_arg1 = ''
-# novelty_arg2:
-# replaceitem - any item name (e.g. brick)
-novelty_arg2 = ''
-difficulty = 'hard'  # easy, medium, hard
+    # novelty_wrappers
+    novelty_name = ''  # axe, axetobreak, fence, additem, replaceitem, remapaction, addchop, breakincrease
+    # novelty_arg1:
+    # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. paper)
+    # replaceitem - any existing item (e.g. wall) | breakincrease - optional: any existing item (e.g. tree_log)
+    novelty_arg1 = ''
+    # novelty_arg2:
+    # replaceitem - any item name (e.g. brick)
+    novelty_arg2 = ''
+    difficulty = 'hard'  # easy, medium, hard
 
-if novelty_name:
-    env = inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2)
-    # print("actions_id: ", env.actions_id)
+    if novelty_name:
+        env = inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2)
 
-# env = BlockItem(env)
-# env = ReplaceItem(env, 'easy', 'wall', 'brick')
+    # env = BlockItem(env)
+    # env = ReplaceItem(env, 'easy', 'wall', 'brick')
 
-KEY_ACTION_DICT = assign_keys(env)
-# print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
-# print("action_space:", env.action_space)
-# print("action_space.sample(): ", env.action_space.sample())
-
-# env.map_size = np.random.randint(low=10, high=20, size=1)[0]
-# fix_item_location('crafting_table', (3, 2))
-
-obs = env.reset()
-env.render()
-for i in range(100):
-    print_play_keys(env)
-    action_id = get_action_from_keyboard()  # take action from keyboard
-    observation, reward, done, info = env.step(action_id)
-
-    print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
-    print("Step: " + str(i) + ", reward: ", reward)
-    print("observation: ", len(observation), observation)
-
-    print("inventory_items_quantity: ", len(env.inventory_items_quantity), env.inventory_items_quantity)
+    KEY_ACTION_DICT = assign_keys(env)
+    # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
+    print("action_space:", env.action_space)
+    print("actions_id:", env.actions_id)
     print("items_id: ", len(env.items_id), env.items_id)
 
-    try:
-        print("step_cost, message: ", info['step_cost'], info['message'])
-        print("selected_item: ", env.selected_item)
-    except:
-        pass
+    # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
+    # fix_item_location('crafting_table', (3, 2))
 
-    time.sleep(0.2)
-    print("")
-
-    if i == 2:
-        # print("action_str: ", env.actions_id)
-        # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
-        # env.remap_action()
-        # KEY_ACTION_DICT = assign_keys(env_id)
-        # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
-
-        # env.add_new_items({'rock': 3, 'axe': 1})
-        # env.block_item(item_to_block='crafting_table', item_to_block_from='tree_log')
-        pass
-
+    obs = env.reset()
     env.render()
-    if done:
-        print("Finished after " + str(i) + " timesteps\n")
-        time.sleep(2)
-        obs = env.reset()
-        env.render()
+    for i in range(100):
+        print_play_keys(env, KEY_ACTION_DICT)
+        action_id = get_action_from_keyboard(KEY_ACTION_DICT)  # take action from keyboard
+        observation, reward, done, info = env.step(action_id)
 
-# env.save()
-env.close()
+        print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
+        print("Step: " + str(i) + ", reward: ", reward)
+        print("observation: ", len(observation), observation)
+
+        print("inventory_items_quantity: ", len(env.inventory_items_quantity), env.inventory_items_quantity)
+
+        try:
+            print("step_cost, message: ", info['step_cost'], info['message'])
+            print("selected_item: ", env.selected_item)
+        except:
+            pass
+
+        time.sleep(0.2)
+        print("")
+
+        if i == 2:
+            # print("action_str: ", env.actions_id)
+            # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
+            # env.remap_action()
+            # KEY_ACTION_DICT = assign_keys(env_id)
+            # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
+
+            # env.add_new_items({'rock': 3, 'axe': 1})
+            # env.block_item(item_to_block='crafting_table', item_to_block_from='tree_log')
+            pass
+
+        env.render()
+        if done:
+            print("Finished after " + str(i) + " timesteps\n")
+            time.sleep(2)
+            obs = env.reset()
+            env.render()
+
+    # env.save()
+    env.close()

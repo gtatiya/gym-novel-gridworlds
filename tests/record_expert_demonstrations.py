@@ -2,13 +2,15 @@ import time
 
 import gym
 import gym_novel_gridworlds
+from gym_novel_gridworlds.wrappers import SaveTrajectories, LimitActions
+from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
+
 import keyboard
 
 from stable_baselines import DQN
-
 from stable_baselines.gail import generate_expert_traj
 
-from constant import ENV_KEY
+from keyboard_interface import assign_keys, print_play_keys
 
 """
 Generate Expert Trajectories from a model
@@ -25,16 +27,12 @@ Generate Expert Trajectories from a model
 Generate Expert Trajectories from a human expert player
 """
 
-env_id = 'NovelGridworld-v3'
+env_id = 'NovelGridworld-Bow-v0'
 env = gym.make(env_id)
+env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
+env = LidarInFront(env)
 
-KEY_ACTION_DICT = ENV_KEY[env_id]
-
-
-def print_play_keys(action_str):
-    print("Press a key to play: ")
-    for key, key_id in KEY_ACTION_DICT.items():
-        print(key, ": ", action_str[key_id])
+KEY_ACTION_DICT = assign_keys(env)
 
 
 def human_expert(_obs):
@@ -48,7 +46,7 @@ def human_expert(_obs):
 
     while True:
         env.render()
-        print_play_keys(env.actions_id)
+        print_play_keys(env, KEY_ACTION_DICT)
         time.sleep(0.2)
         key_pressed = keyboard.read_key()
         # return index of action if valid key is pressed
@@ -66,5 +64,5 @@ def human_expert(_obs):
 # when using something different than an RL expert,
 # you must pass the environment object explicitly
 env.render()
-episodes = 50
-generate_expert_traj(human_expert, 'expert_' + env_id+'_'+str(episodes)+'demos', env, n_episodes=episodes)
+episodes = 10
+generate_expert_traj(human_expert, 'expert_' + env_id + '_' + str(episodes) + 'demos', env, n_episodes=episodes)

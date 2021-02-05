@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from stable_baselines.results_plotter import load_results, ts2xy
 
 
-log_dir = 'results2'  # 'models'
+log_dir = 'results'
 # agents = ['NovelGridworld-v2', 'NovelGridworld-v3', 'NovelGridworld-v4_lfd', 'NovelGridworld-v5_lfd']
 # agents = ['NovelGridworld-v0', 'NovelGridworld-v0_remap_action']
 # agents = ['NovelGridworld-v2_8beams_in_180degrees', 'NovelGridworld-v2_9beams_in_180degrees',
@@ -14,7 +14,7 @@ log_dir = 'results2'  # 'models'
 # agents = ['NovelGridworld-v2_8beams_in_360degrees',
 #           'NovelGridworld-v2_8beams0filled40range_in_360degrees',
 #           'NovelGridworld-v2_8beams0filled40range3items_in_360degrees']
-agents = ['NovelGridworld-v3_8beams0filled40range3items_in_360degrees_lfd']
+agents = ['NovelGridworld-Bow-v0_8beams0filled11hypotenuserange3items_in_360degrees']
 
 # log_dir = r"C:\Users\GyanT\Documents\GitHub\Reinforcement-Learning\5_DQN\experiments\\"
 # agents = ['NovelGridworld-v0_1_DQN', 'NovelGridworld-v0_2_Dueling_DQN', 'NovelGridworld-v0_3_Dueling_Double_DQN',
@@ -37,5 +37,5 @@ plt.title('Learning Curve')
 plt.ylabel("Episodes Rewards")
 plt.xlabel("Timesteps")
 plt.legend()
-plt.savefig(log_dir+os.sep+"learning_curve.png", bbox_inches='tight', dpi=100)
+plt.savefig(log_dir + os.sep + "learning_curve.png", bbox_inches='tight', dpi=100)
 plt.show()

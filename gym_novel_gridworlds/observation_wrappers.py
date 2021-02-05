@@ -17,14 +17,16 @@ class LidarInFront(gym.core.ObservationWrapper):
         super().__init__(env)
 
         # Observation Space
+        self.num_beams = num_beams
         items_to_exclude = ['air', self.goal_item_to_craft]       
-        self.lidar_items = copy.deepcopy(self.env.items_id)
+        self.lidar_items = copy.deepcopy(self.items_id)
         list(map(self.lidar_items.pop, items_to_exclude))  # remove air and goal_item_to_craft from the lidar_items
         self.lidar_items_id = self.set_items_id(self.lidar_items)  # set IDs for all the lidar items
-        self.num_beams = num_beams
-        self.max_beam_range = int(math.sqrt(2 * (self.env.map_size - 2) ** 2))  # Hypotenuse of a square
-        low = np.zeros(len(self.lidar_items) * self.num_beams + len(self.inventory_items_quantity), dtype=int)
-        high = np.array([self.max_beam_range] * len(self.lidar_items) * self.num_beams + [20] * len(self.inventory_items_quantity))  # 20 denotes the maximum quantity of any item in the inventory
+        self.max_beam_range = int(math.sqrt(2 * (self.map_size - 2) ** 2))  # Hypotenuse of a square
+        low = np.array([0] * (len(self.lidar_items) * self.num_beams) +
+                       [0] * (len(self.inventory_items_quantity) - len(self.unbreakable_items)))
+        high = np.array([self.max_beam_range] * (len(self.lidar_items) * self.num_beams) +
+                        [20] * (len(self.inventory_items_quantity) - len(self.unbreakable_items)))  # 20 is max quantity of any item in inventory
         self.observation_space = spaces.Box(low, high, dtype=int)
 
     def get_lidarSignal(self):

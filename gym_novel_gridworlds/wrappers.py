@@ -64,7 +64,7 @@ class LimitActions(gym.core.Wrapper):
         super().__init__(env)
 
         self.limited_actions = limited_actions
-        self.limited_actions_id = {action: i for i, action in enumerate(self.limited_actions)}
+        self.limited_actions_id = {action: i for i, action in enumerate(sorted(self.limited_actions))}
         self.action_space = spaces.Discrete(len(self.limited_actions_id))
 
     def step(self, action_id):

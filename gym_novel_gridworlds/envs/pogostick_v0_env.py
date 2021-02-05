@@ -152,27 +152,22 @@ class PogostickV0Env(gym.Env):
         observation = self.get_observation()
 
         # Placing a tree_tap at a random direction next to a random tree_log
+        result = np.array(np.where(self.map == self.items_id['tree_log']))
+        assert len(result[0]) > 1, "Need tree_log in map to place tree_tap"
         while True:
-            result = np.array(np.where(self.map == self.items_id['tree_log']))
-
-            # Shuffling locations in result
-            indices = np.arange(len(result[0]))
-            np.random.shuffle(indices)
-            result[0] = result[0][indices]
-            result[1] = result[1][indices]
-
             direction = np.random.choice(list(self.direction_id.keys()))
-            r, c = result[0][0], result[1][0]
+            tree_log_idx = np.random.choice(len(result[0]))
+            r, c = result[0][tree_log_idx], result[1][tree_log_idx]
             if direction == 'NORTH' and (0 <= (r - 1) <= self.map_size - 1) and self.map[r - 1][c] == 0 and (
                     r - 1, c) != self.agent_location:
                 self.map[r - 1][c] = self.items_id['tree_tap']
-            if direction == 'SOUTH' and (0 <= (r + 1) <= self.map_size - 1) and self.map[r + 1][c] == 0 and (
+            elif direction == 'SOUTH' and (0 <= (r + 1) <= self.map_size - 1) and self.map[r + 1][c] == 0 and (
                     r + 1, c) != self.agent_location:
                 self.map[r + 1][c] = self.items_id['tree_tap']
-            if direction == 'WEST' and (0 <= (c - 1) <= self.map_size - 1) and self.map[r][c - 1] == 0 and (
+            elif direction == 'WEST' and (0 <= (c - 1) <= self.map_size - 1) and self.map[r][c - 1] == 0 and (
                     r, c - 1) != self.agent_location:
                 self.map[r][c - 1] = self.items_id['tree_tap']
-            if direction == 'EAST' and (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == 0 and (
+            elif direction == 'EAST' and (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == 0 and (
                     r, c + 1) != self.agent_location:
                 self.map[r][c + 1] = self.items_id['tree_tap']
 
@@ -617,13 +612,15 @@ class PogostickV0Env(gym.Env):
         plt.text(-(self.map_size // 2) - 0.5, 2.25, info, fontsize=10, bbox=props)  # x, y
 
         if self.last_done:
-            you_win = "YOU WIN " + self.env_id + "!!!"
-            props = dict(boxstyle='round', facecolor='w', alpha=1)
-            plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
-            if self.inventory_items_quantity['pogo_stick'] >= 1:
-                you_win = "YOU CRAFTED POGO_STICK!!!"
+            if self.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                you_win = "YOU WIN " + self.env_id + "!!!"
+                you_win += "\nYOU CRAFTED " + self.goal_item_to_craft.upper() + "!!!"
                 props = dict(boxstyle='round', facecolor='w', alpha=1)
-                plt.text(0 - 0.1, (self.map_size // 2) + 1, you_win, fontsize=18, bbox=props)
+                plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
+            else:
+                you_win = "YOU CAN'T WIN " + self.env_id + "!!!"
+                props = dict(boxstyle='round', facecolor='w', alpha=1)
+                plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
 
         cmap = get_cmap(color_map)
 

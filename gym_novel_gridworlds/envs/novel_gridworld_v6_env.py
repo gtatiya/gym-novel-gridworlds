@@ -588,13 +588,15 @@ class NovelGridworldV6Env(gym.Env):
         plt.text(-(self.map_size // 2) - 0.5, 2.25, info, fontsize=10, bbox=props)  # x, y
 
         if self.last_done:
-            you_win = "YOU WIN " + self.env_id + "!!!"
-            props = dict(boxstyle='round', facecolor='w', alpha=1)
-            plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
-            if self.inventory_items_quantity['pogo_stick'] >= 1:
-                you_win = "YOU CRAFTED POGO_STICK!!!"
+            if self.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                you_win = "YOU WIN " + self.env_id + "!!!"
+                you_win += "\nYOU CRAFTED " + self.goal_item_to_craft.upper() + "!!!"
                 props = dict(boxstyle='round', facecolor='w', alpha=1)
-                plt.text(0 - 0.1, (self.map_size // 2) + 1, you_win, fontsize=18, bbox=props)
+                plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
+            else:
+                you_win = "YOU DIED " + self.env_id + "!!!"
+                props = dict(boxstyle='round', facecolor='w', alpha=1)
+                plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
 
         cmap = get_cmap(color_map)
 

@@ -835,12 +835,80 @@ class AddChopAction(gym.core.Wrapper):
 
         return observation, reward, done, info
 
+class BreakIncrease(gym.core.Wrapper):
+    """
+    Novelty wrapper to get 2 items in inventory when the agent break that item instead of 1
+    itemtobreakmore: apply this to only itemtobreakmore or if itemtobreakmore == '', then to all items
+    """
+
+    def __init__(self, env, itemtobreakmore=''):
+        super().__init__(env)
+
+        self.itemtobreakmore = itemtobreakmore
+
+    def step(self, action_id):
+
+        if action_id == self.actions_id['Break']:
+            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+
+            reward = -1  # default reward
+            result = True
+            step_cost = 3600.0
+            message = ''
+
+            self.env.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if self.env.block_in_front_str not in self.env.unbreakable_items:
+                block_r, block_c = self.env.block_in_front_location
+                self.env.map[block_r][block_c] = 0
+                if self.itemtobreakmore == self.env.block_in_front_str:
+                    self.env.inventory_items_quantity[self.itemtobreakmore] += 2
+                elif self.itemtobreakmore == '':
+                    self.env.inventory_items_quantity[self.block_in_front_str] += 2
+                else:
+                    self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                if self.env.block_in_front_str == 'tree_log':
+                    reward = 10
+                else:
+                    reward = -10  # break something else
+            else:
+                result = False
+                message = "Cannot break " + self.env.block_in_front_str
+
+            # Update after each step
+            self.env.grab_entities()
+            observation = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = 50
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            observation, reward, done, info = self.env.step(action_id)
+
+        return observation, reward, done, info
+
 #################### Novelty Helper ####################
 
 def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
 
     if novelty_name == 'addchop':
         return AddChopAction(env)
+    elif novelty_name == 'breakincrease':
+        if novelty_arg1:
+            env = BreakIncrease(env, novelty_arg1)
+        else:
+            env = BreakIncrease(env)
 
     if difficulty == 'easy':
         if novelty_name == 'axe':
