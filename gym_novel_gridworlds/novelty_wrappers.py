@@ -674,7 +674,7 @@ class ReplaceItem(gym.core.Wrapper):
                                                                    + ") should be a new item"
 
         self.env.items.add(self.item_to_replace_with)
-        self.env.items_id.setdefault(self.item_to_replace_with, len(self.items_id) + 1)
+        self.env.items_id.setdefault(self.item_to_replace_with, len(self.items_id))
         # self.env.entities.add(self.item_to_replace_with)
         self.env.select_actions_id.update({'Select_' + self.item_to_replace_with: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
@@ -712,6 +712,53 @@ class ReplaceItem(gym.core.Wrapper):
         self.update_block_in_front()
 
         return observation
+
+
+class FireWall(gym.core.Wrapper):
+    """
+    Novelty wrapper to add fire_wall, agent dies when it's next to fire_wall
+    """
+
+    def __init__(self, env, difficulty='hard'):
+        super().__init__(env)
+
+        self.env2 = ReplaceItem(env, difficulty, item_to_replace = 'wall', item_to_replace_with = 'fire_wall')
+
+    def reset(self):
+
+        observation = self.env2.reset()
+
+        return observation
+
+    def step(self, action_id):
+
+        observation, reward, done, info = self.env.step(action_id)
+
+        r, c = self.agent_location
+        close_to_fire_wall = False
+        # NORTH
+        if (0 <= (r - 1) <= self.map_size - 1) and self.map[r - 1][c] == self.env.items_id['fire_wall']:
+            close_to_fire_wall = True
+        # SOUTH
+        elif (0 <= (r + 1) <= self.map_size - 1) and self.map[r + 1][c] == self.env.items_id['fire_wall']:
+            close_to_fire_wall = True
+        # WEST
+        elif (0 <= (c - 1) <= self.map_size - 1) and self.map[r][c - 1] == self.env.items_id['fire_wall']:
+            close_to_fire_wall = True
+        # EAST
+        elif (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == self.env.items_id['fire_wall']:
+            close_to_fire_wall = True
+
+        if close_to_fire_wall:
+            reward = -50
+            done = True
+            info['message'] = 'You died due to fire_wall'
+
+        # Update after each step
+        self.env.last_reward = reward
+        self.env.last_done = done
+
+        return observation, reward, done, info
 
 
 def remap_action_difficulty(env, difficulty='hard'):
@@ -778,18 +825,19 @@ class BlockItem(gym.core.Wrapper):
 class AddChopAction(gym.core.Wrapper):
     """
     Novelty wrapper to add chop action
+    It's like break action, but instead of 1 item, agent will get 2 items, but step_cost will be higher
     """
 
     def __init__(self, env):
         super().__init__(env)
 
-        self.env.manipulation_actions_id['chop'] = len(self.actions_id)
+        self.env.manipulation_actions_id['Chop'] = len(self.actions_id)
         self.env.actions_id.update(self.manipulation_actions_id)
         self.action_space = spaces.Discrete(len(self.actions_id))
 
     def step(self, action_id):
 
-        if action_id == self.actions_id['chop']:
+        if action_id == self.actions_id['Chop']:
 
             self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
 
@@ -834,6 +882,68 @@ class AddChopAction(gym.core.Wrapper):
             observation, reward, done, info = self.env.step(action_id)
 
         return observation, reward, done, info
+
+
+class AddJumpAction(gym.core.Wrapper):
+    """
+    Novelty wrapper to add jump action, when it's executed, the agent jumps 2 blocks forward
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+
+        self.env.manipulation_actions_id['Jump'] = len(self.actions_id)
+        self.env.actions_id.update(self.manipulation_actions_id)
+        self.action_space = spaces.Discrete(len(self.actions_id))
+
+    def step(self, action_id):
+
+        if action_id == self.actions_id['Jump']:
+
+            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+            r, c = self.agent_location
+
+            reward = -1  # default reward
+            result = True
+            step_cost = 0  # default step_cost
+            message = ''
+
+            if self.agent_facing_str == 'NORTH' and (0 <= (r - 2) <= self.map_size - 1) and self.map[r - 2][c] == 0:
+                self.env.agent_location = (r - 2, c)
+            elif self.agent_facing_str == 'SOUTH' and (0 <= (r + 2) <= self.map_size - 1) and self.map[r + 2][c] == 0:
+                self.env.agent_location = (r + 2, c)
+            elif self.agent_facing_str == 'WEST' and (0 <= (c - 2) <= self.map_size - 1) and self.map[r][c - 2] == 0:
+                self.env.agent_location = (r, c - 2)
+            elif self.agent_facing_str == 'EAST' and (0 <= (c + 2) <= self.map_size - 1) and self.map[r][c + 2] == 0:
+                self.env.agent_location = (r, c + 2)
+            else:
+                result = False
+                message = 'Block in path'
+
+            step_cost = 27.906975 * 2
+
+            # Update after each step
+            self.env.grab_entities()
+            observation = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = 50
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            observation, reward, done, info = self.env.step(action_id)
+
+        return observation, reward, done, info
+
 
 class BreakIncrease(gym.core.Wrapper):
     """
@@ -898,6 +1008,67 @@ class BreakIncrease(gym.core.Wrapper):
 
         return observation, reward, done, info
 
+
+class ExtractIncDec(gym.core.Wrapper):
+    """
+    Novelty wrapper to increase/decrease string when Extract_string action is executed
+    incdec: 'increase' to increase, 'decrease' to decrease
+    """
+
+    def __init__(self, env, incdec='decrease'):
+        super().__init__(env)
+
+        assert self.env_id.startswith('NovelGridworld-Bow'), 'ExtractIncDec novelty wrapper is not for ' + self.env_id
+
+        self.incdec = incdec
+
+    def step(self, action_id):
+
+        self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+
+        if self.env.last_action.startswith('Extract'):
+
+            reward = -1  # default reward
+            result = True
+            step_cost = 120.0  # default step_cost
+            message = ''
+
+            # For Bow env.
+            if self.block_in_front_str == 'wool':
+                if self.incdec == 'increase':
+                    self.inventory_items_quantity['string'] += 4 * 2  # Extract_string
+                else:
+                    self.inventory_items_quantity['string'] += 4 // 2 # Extract_string
+                block_r, block_c = self.block_in_front_location
+                self.map[block_r][block_c] = 0
+                reward = 15
+                step_cost = 5000
+            else:
+                result = False
+                message = "No wool found"
+
+            # Update after each step
+            self.env.grab_entities()
+            observation = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = 50
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            observation, reward, done, info = self.env.step(action_id)
+
+        return observation, reward, done, info
+
 #################### Novelty Helper ####################
 
 def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
@@ -909,6 +1080,8 @@ def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
             env = BreakIncrease(env, novelty_arg1)
         else:
             env = BreakIncrease(env)
+    elif novelty_name == 'extractincdec':
+        env = ExtractIncDec(env, novelty_arg1)
 
     if difficulty == 'easy':
         if novelty_name == 'axe':
@@ -923,6 +1096,8 @@ def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
             env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
         elif novelty_name == 'remapaction':
             env = remap_action_difficulty(env, difficulty)
+        elif novelty_name == 'firewall':
+            env = FireWall(env, difficulty)
     elif difficulty == 'medium':
         if novelty_name == 'axe':
             env = AxeMedium(env, novelty_arg1)
@@ -936,6 +1111,8 @@ def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
             env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
         elif novelty_name == 'remapaction':
             env = remap_action_difficulty(env, difficulty)
+        elif novelty_name == 'firewall':
+            env = FireWall(env, difficulty)
     elif difficulty == 'hard':
         if novelty_name == 'axe':
             env = AxeHard(env, novelty_arg1)
@@ -949,5 +1126,7 @@ def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
             env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
         elif novelty_name == 'remapaction':
             env = remap_action_difficulty(env, difficulty)
+        elif novelty_name == 'firewall':
+            env = FireWall(env, difficulty)
 
     return env

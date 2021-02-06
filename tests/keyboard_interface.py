@@ -21,7 +21,7 @@ def assign_keys(env_):
     else:
         actions_id = env_.actions_id
 
-    actions_key = {'Forward': 'w', 'Left': 'a', 'Right': 'd', 'Break': 'e', 'chop': 'q',
+    actions_key = {'Forward': 'w', 'Left': 'a', 'Right': 'd', 'Break': 'e', 'Chop': 'q', 'Jump': 'space',
                    'Place_tree_tap': 'z', 'Extract_rubber': 'x', 'Extract_string': 'x'}
 
     if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1']:
@@ -92,7 +92,7 @@ def fix_item_location(item, location):
 
 
 if __name__ == "__main__":
-    env_id = 'NovelGridworld-Pogostick-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
+    env_id = 'NovelGridworld-Bow-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
     env = gym.make(env_id)
 
     # wrappers
@@ -104,15 +104,18 @@ if __name__ == "__main__":
     # env = AgentMap(env)
 
     # novelty_wrappers
-    novelty_name = ''  # axe, axetobreak, fence, additem, replaceitem, remapaction, addchop, breakincrease
+    # novelty_name:
+    # axe, axetobreak, fence, additem, replaceitem, remapaction, addchop, breakincrease, extractincdec, firewall
+    novelty_name = ''
     # novelty_arg1:
     # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. paper)
     # replaceitem - any existing item (e.g. wall) | breakincrease - optional: any existing item (e.g. tree_log)
+    # extractincdec - increase or decrease
     novelty_arg1 = ''
     # novelty_arg2:
     # replaceitem - any item name (e.g. brick)
     novelty_arg2 = ''
-    difficulty = 'hard'  # easy, medium, hard
+    difficulty = 'easy'  # easy, medium, hard
 
     if novelty_name:
         env = inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2)

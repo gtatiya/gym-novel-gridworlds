@@ -291,7 +291,7 @@ class BowV1Env(gym.Env):
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
                 reward = 15
-                step_cost = 50000
+                step_cost = 5000
             else:
                 result = False
                 message = "No wool found"
