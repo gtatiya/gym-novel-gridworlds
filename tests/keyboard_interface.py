@@ -108,7 +108,7 @@ if __name__ == "__main__":
     # axe, axetobreak, fence, additem, replaceitem, remapaction, addchop, breakincrease, extractincdec, firewall
     novelty_name = ''
     # novelty_arg1:
-    # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. paper)
+    # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. arrow, spring)
     # replaceitem - any existing item (e.g. wall) | breakincrease - optional: any existing item (e.g. tree_log)
     # extractincdec - increase or decrease
     novelty_arg1 = ''
