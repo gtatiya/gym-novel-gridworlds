@@ -17,7 +17,7 @@ class AxeEasy(gym.core.Wrapper):
 
         self.axe_name = axe_material + '_axe'  # wooden_axe, iron_axe
         self.env.items.add(self.axe_name)
-        self.env.items_id.setdefault(self.axe_name, len(self.items_id) + 1)
+        self.env.items_id.setdefault(self.axe_name, len(self.items_id))
         self.env.inventory_items_quantity.update({self.axe_name: 1})
         self.env.entities.add(self.axe_name)
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
@@ -84,6 +84,7 @@ class AxeMedium(gym.core.Wrapper):
 class AxeHard(gym.core.Wrapper):
     """
     Novelty wrapper to add a new recipe and action to craft axe
+    The ingredients of axe are placed in the map
     When the agent crafts axe, it goes in the inventory
     Using axe reduces the step_cost to when Break action is used
     """
@@ -94,16 +95,27 @@ class AxeHard(gym.core.Wrapper):
         self.axe_material = axe_material
         self.axe_name = self.axe_material + '_axe'  # wooden_axe, iron_axe
         self.env.items.add(self.axe_name)
-        self.env.items_id.setdefault(self.axe_name, len(self.items_id) + 1)
+        self.env.items_id.setdefault(self.axe_name, len(self.items_id))
         self.env.inventory_items_quantity.update({self.axe_name: 0})
         self.env.entities.add(self.axe_name)
 
         # Action Space
         if self.axe_material == 'wooden':
-            self.env.recipes.update({self.axe_name: {'input': {'stick': 2, 'plank': 3}, 'output': {self.axe_name: 1}}})
+            axe_recipe = {'stick': 2, 'plank': 3}
         elif self.axe_material == 'iron':
-            self.env.add_new_items({'iron': 3})
-            self.env.recipes.update({self.axe_name: {'input': {'stick': 2, 'iron': 3}, 'output': {self.axe_name: 1}}})
+            axe_recipe = {'stick': 2, 'iron': 3}
+        # adding axe's ingredients to map
+        for item in axe_recipe:
+            if item in self.env.items:
+                if item in self.items_quantity:
+                    item_quantity = self.items_quantity[item]
+                    self.env.items_quantity.update({item: item_quantity + axe_recipe[item]})
+                else:
+                    self.env.items_quantity.update({item: axe_recipe[item]})
+            else:
+                self.env.add_new_items({item: axe_recipe[item]})
+        self.env.recipes.update({self.axe_name: {'input': axe_recipe, 'output': {self.axe_name: 1}}})
+
         # self.action_craft_str.update({len(self.action_str): 'Craft_' + self.axe_name})
         self.env.actions_id.update({'Craft_' + self.axe_name: len(self.env.actions_id)})
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
@@ -213,7 +225,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
 
         self.axe_name = axe_material + '_axe'  # wooden_axe, iron_axe
         self.env.items.add(self.axe_name)
-        self.env.items_id.setdefault(self.axe_name, len(self.items_id) + 1)
+        self.env.items_id.setdefault(self.axe_name, len(self.items_id))
         self.env.inventory_items_quantity.update({self.axe_name: 1})
         self.env.entities.add(self.axe_name)
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
@@ -377,7 +389,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
 class AxetoBreakHard(gym.core.Wrapper):
     """
     Novelty wrapper to add a new recipe and action to craft axe
-    Agent starts with ingredients to craft an axe
+    Agent starts with ingredients to craft an axe in the inventory
     When the agent crafts axe, it goes in the inventory
     Axe is required to break items
     Using axe reduces the step_cost when Break action is used
@@ -389,18 +401,22 @@ class AxetoBreakHard(gym.core.Wrapper):
         self.axe_material = axe_material
         self.axe_name = self.axe_material + '_axe'  # wooden_axe, iron_axe
         self.env.items.add(self.axe_name)
-        self.env.items_id.setdefault(self.axe_name, len(self.items_id) + 1)
-        if self.axe_material == 'wooden':
-            self.env.inventory_items_quantity.update({'wooden_axe': 0, 'stick': 2, 'plank': 3})
-            self.env.recipes.update({self.axe_name: {'input': {'stick': 2, 'plank': 3}, 'output': {self.axe_name: 1}}})
-        elif self.axe_material == 'iron':
-            self.env.items.add('iron')
-            self.env.items_id.setdefault('iron', len(self.items_id) + 1)
-            self.env.inventory_items_quantity.update({'iron_axe': 0, 'stick': 2, 'iron': 3})
-            self.env.recipes.update({self.axe_name: {'input': {'stick': 2, 'iron': 3}, 'output': {self.axe_name: 1}}})
+        self.env.items_id.setdefault(self.axe_name, len(self.items_id))
+        self.env.inventory_items_quantity.update({self.axe_name: 0})
         self.env.entities.add(self.axe_name)
 
         # Action Space
+        if self.axe_material == 'wooden':
+            axe_recipe = {'stick': 2, 'plank': 3}
+        elif self.axe_material == 'iron':
+            axe_recipe = {'stick': 2, 'iron': 3}
+        for item in axe_recipe:
+            if item not in self.env.items:
+                self.env.items.add(item)
+                self.env.items_id.setdefault(item, len(self.items_id))
+        self.env.inventory_items_quantity.update(axe_recipe)
+        self.env.recipes.update({self.axe_name: {'input': axe_recipe, 'output': {self.axe_name: 1}}})
+
         # self.action_craft_str.update({'Craft_' + self.axe_name: len(self.action_str)})
         self.env.actions_id.update({'Craft_' + self.axe_name: len(self.env.actions_id)})
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
@@ -577,7 +593,7 @@ class Fence(gym.core.Wrapper):
 
         self.fence_name = fence_material + '_fence'  # oak_fence, jungle_fence
         self.env.items.add(self.fence_name)
-        self.env.items_id.setdefault(self.fence_name, len(self.items_id) + 1)
+        self.env.items_id.setdefault(self.fence_name, len(self.items_id))
         self.env.select_actions_id.update({'Select_' + self.fence_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
 
@@ -617,12 +633,12 @@ class AddItem(gym.core.Wrapper):
     Novelty wrapper to add a new item in the map
     """
 
-    def __init__(self, env, difficulty, item_to_add='paper'):
+    def __init__(self, env, difficulty, item_to_add):
         super().__init__(env)
 
         self.item_to_add = item_to_add
         self.env.items.add(self.item_to_add)
-        self.env.items_id.setdefault(self.item_to_add, len(self.items_id) + 1)
+        self.env.items_id.setdefault(self.item_to_add, len(self.items_id))
         # self.env.entities.add(self.item_to_add)
         self.env.select_actions_id.update({'Select_' + self.item_to_add: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
@@ -799,7 +815,7 @@ class BlockItem(gym.core.Wrapper):
         self.item_to_block_from = 'tree_log'
 
         self.env.items.add('fence')
-        self.env.items_id.setdefault('fence', len(self.items_id) + 1)
+        self.env.items_id.setdefault('fence', len(self.items_id))
 
     def step(self, action_id):
 
@@ -1018,8 +1034,6 @@ class ExtractIncDec(gym.core.Wrapper):
     def __init__(self, env, incdec='decrease'):
         super().__init__(env)
 
-        assert self.env_id.startswith('NovelGridworld-Bow'), 'ExtractIncDec novelty wrapper is not for ' + self.env_id
-
         self.incdec = incdec
 
     def step(self, action_id):
@@ -1033,19 +1047,34 @@ class ExtractIncDec(gym.core.Wrapper):
             step_cost = 120.0  # default step_cost
             message = ''
 
-            # For Bow env.
-            if self.block_in_front_str == 'wool':
-                if self.incdec == 'increase':
-                    self.inventory_items_quantity['string'] += 4 * 2  # Extract_string
+            if self.env_id.startswith('NovelGridworld-Bow'):
+                if self.block_in_front_str == 'wool':
+                    if self.incdec == 'increase':
+                        self.inventory_items_quantity['string'] += 4 * 2  # Extract_string
+                    else:
+                        self.inventory_items_quantity['string'] += 4 // 2 # Extract_string
+                    block_r, block_c = self.block_in_front_location
+                    self.map[block_r][block_c] = 0
+                    reward = 15
+                    step_cost = 5000
                 else:
-                    self.inventory_items_quantity['string'] += 4 // 2 # Extract_string
-                block_r, block_c = self.block_in_front_location
-                self.map[block_r][block_c] = 0
-                reward = 15
-                step_cost = 5000
-            else:
-                result = False
-                message = "No wool found"
+                    result = False
+                    message = "No wool found"
+            elif self.env_id.startswith('NovelGridworld-Pogostick'):
+                # Make sure that block_in_front_location is next to a tree
+                block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
+                if self.block_in_front_str == 'tree_tap':
+                    if block_in_front_next_to_tree:
+                        if self.incdec == 'increase':
+                            self.inventory_items_quantity['rubber'] += 1 * 2  # Extract_rubber
+                        reward = 15
+                        step_cost = 50000
+                    else:
+                        result = False
+                        message = "No tree_log near tree_tap"
+                else:
+                    result = False
+                    message = "No tree_tap found"
 
             # Update after each step
             self.env.grab_entities()
@@ -1071,62 +1100,68 @@ class ExtractIncDec(gym.core.Wrapper):
 
 #################### Novelty Helper ####################
 
-def inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2):
+def inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2):
+
+    assert novelty_name in ['addchop', 'additem', 'axe', 'axetobreak', 'breakincrease', 'extractincdec', 'fence',
+                            'firewall', 'remapaction', 'replaceitem'],\
+        "novelty_name must be one of 'addchop', 'additem', 'axe', 'axetobreak', 'breakincrease', 'extractincdec'," \
+        "'fence', 'firewall', 'remapaction', 'replaceitem'"
+    if novelty_name in ['additem', 'axe', 'axetobreak', 'fence', 'firewall', 'remapaction', 'replaceitem']:
+        assert difficulty in ['easy', 'medium', 'hard'], "difficulty must be one of 'easy', 'medium', 'hard'"
 
     if novelty_name == 'addchop':
-        return AddChopAction(env)
+        env = AddChopAction(env)
+    elif novelty_name == 'additem':
+        assert novelty_arg1, "For additem novelty, novelty_arg1 (name of the item to add) is needed"
+
+        env = AddItem(env, difficulty, novelty_arg1)
+    elif novelty_name == 'axe':
+        assert novelty_arg1 in ['wooden', 'iron'],\
+            "For axe novelty, novelty_arg1 (attribute of axe, e.g. wooden, iron) is needed"
+
+        if difficulty == 'easy':
+            env = AxeEasy(env, novelty_arg1)
+        elif difficulty == 'medium':
+            env = AxeMedium(env, novelty_arg1)
+        elif difficulty == 'hard':
+            env = AxeHard(env, novelty_arg1)
+    elif novelty_name == 'axetobreak':
+        assert novelty_arg1 in ['wooden', 'iron'],\
+            "For axe novelty, novelty_arg1 (attribute of axe, e.g. wooden, iron) is needed"
+
+        if difficulty == 'easy':
+            env = AxetoBreakEasy(env, novelty_arg1)
+        elif difficulty == 'medium':
+            env = AxetoBreakMedium(env, novelty_arg1)
+        elif difficulty == 'hard':
+            env = AxetoBreakHard(env, novelty_arg1)
     elif novelty_name == 'breakincrease':
         if novelty_arg1:
             env = BreakIncrease(env, novelty_arg1)
         else:
             env = BreakIncrease(env)
     elif novelty_name == 'extractincdec':
-        env = ExtractIncDec(env, novelty_arg1)
+        assert novelty_arg1 in ['increase', 'decrease'], \
+            "For extractincdec novelty, novelty_arg1 ('increase', 'decrease') is needed"
 
-    if difficulty == 'easy':
-        if novelty_name == 'axe':
-            env = AxeEasy(env, novelty_arg1)
-        elif novelty_name == 'axetobreak':
-            env = AxetoBreakEasy(env, novelty_arg1)
-        elif novelty_name == 'fence':
-            env = Fence(env, difficulty, novelty_arg1)
-        elif novelty_name == 'additem':
-            env = AddItem(env, difficulty, novelty_arg1)
-        elif novelty_name == 'replaceitem':
-            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
-        elif novelty_name == 'remapaction':
-            env = remap_action_difficulty(env, difficulty)
-        elif novelty_name == 'firewall':
-            env = FireWall(env, difficulty)
-    elif difficulty == 'medium':
-        if novelty_name == 'axe':
-            env = AxeMedium(env, novelty_arg1)
-        elif novelty_name == 'axetobreak':
-            env = AxetoBreakMedium(env, novelty_arg1)
-        elif novelty_name == 'fence':
-            env = Fence(env, difficulty, novelty_arg1)
-        elif novelty_name == 'additem':
-            env = AddItem(env, difficulty, novelty_arg1)
-        elif novelty_name == 'replaceitem':
-            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
-        elif novelty_name == 'remapaction':
-            env = remap_action_difficulty(env, difficulty)
-        elif novelty_name == 'firewall':
-            env = FireWall(env, difficulty)
-    elif difficulty == 'hard':
-        if novelty_name == 'axe':
-            env = AxeHard(env, novelty_arg1)
-        elif novelty_name == 'axetobreak':
-            env = AxetoBreakHard(env, novelty_arg1)
-        elif novelty_name == 'fence':
-            env = Fence(env, difficulty, novelty_arg1)
-        elif novelty_name == 'additem':
-            env = AddItem(env, difficulty, novelty_arg1)
-        elif novelty_name == 'replaceitem':
-            env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
-        elif novelty_name == 'remapaction':
-            env = remap_action_difficulty(env, difficulty)
-        elif novelty_name == 'firewall':
-            env = FireWall(env, difficulty)
+        assert env.env_id != 'NovelGridworld-Bow-v0', "There is nothing to extract in 'NovelGridworld-Bow-v0'"
+
+        if env.env_id.startswith('NovelGridworld-Pogostick'):
+            assert novelty_arg1 == 'increase', "Cannot decrease rubbet extraction"
+
+        env = ExtractIncDec(env, novelty_arg1)
+    elif novelty_name == 'fence':
+        assert novelty_arg1, "For fence novelty, novelty_arg1 (attribute of fence, e.g. oak, jungle) is needed"
+
+        env = Fence(env, difficulty, novelty_arg1)
+    elif novelty_name == 'firewall':
+        env = FireWall(env, difficulty)
+    elif novelty_name == 'remapaction':
+        env = remap_action_difficulty(env, difficulty)
+    elif novelty_name == 'replaceitem':
+        assert novelty_arg1 and novelty_arg2, "For replaceitem novelty, novelty_arg1 (Item to replace) and novelty_arg2" \
+                                              "(Item to replace with) are needed"
+
+        env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
 
     return env

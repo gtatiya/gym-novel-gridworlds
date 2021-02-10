@@ -9,7 +9,7 @@ from gym import error, spaces, utils
 
 class LidarInFront(gym.core.ObservationWrapper):
     """
-    Send several beans (self.num_beams) at equally spaced angles in 180 degrees in front of agent + agent's current
+    Send several beans (num_beams) at equally spaced angles in 360 degrees in front of agent + agent's current
     inventory
     """
 
@@ -18,9 +18,9 @@ class LidarInFront(gym.core.ObservationWrapper):
 
         # Observation Space
         self.num_beams = num_beams
-        items_to_exclude = ['air', self.goal_item_to_craft]       
-        self.lidar_items = copy.deepcopy(self.items_id)
-        list(map(self.lidar_items.pop, items_to_exclude))  # remove air and goal_item_to_craft from the lidar_items
+        items_to_exclude = ['air', self.goal_item_to_craft]
+        self.lidar_items = set(self.items_id.keys())
+        set(map(self.lidar_items.remove, items_to_exclude))  # remove air and goal_item_to_craft from the lidar_items
         self.lidar_items_id = self.set_items_id(self.lidar_items)  # set IDs for all the lidar items
         self.max_beam_range = int(math.sqrt(2 * (self.map_size - 2) ** 2))  # Hypotenuse of a square
         low = np.array([0] * (len(self.lidar_items) * self.num_beams) +
@@ -31,8 +31,8 @@ class LidarInFront(gym.core.ObservationWrapper):
 
     def get_lidarSignal(self):
         """
-        Send several beams (self.num_beams) at equally spaced angles in 360 degrees in front of agent within a range
-        For each bean store distance (beam_range) for each item in items_id_lidar if item is found otherwise 0
+        Send several beams (num_beams) at equally spaced angles in 360 degrees in front of agent within a range
+        For each bean store distance (beam_range) for each item in lidar_items_id if item is found otherwise 0
         and return lidar_signals
         """
 
@@ -50,7 +50,7 @@ class LidarInFront(gym.core.ObservationWrapper):
             beam_signal = np.zeros(len(self.lidar_items_id), dtype=int)
 
             # Keep sending longer beams until hit an object or wall
-            for beam_range in range(1, self.max_beam_range+1):
+            for beam_range in range(1, self.max_beam_range + 1):
                 r_obj = r + np.round(beam_range * x_ratio)
                 c_obj = c + np.round(beam_range * y_ratio)
                 obj_id_rc = self.map[int(r_obj)][int(c_obj)]

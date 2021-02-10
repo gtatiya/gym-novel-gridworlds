@@ -92,8 +92,10 @@ def fix_item_location(item, location):
 
 
 if __name__ == "__main__":
-    env_id = 'NovelGridworld-Bow-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
+    env_id = 'NovelGridworld-Pogostick-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
     env = gym.make(env_id)
+
+    # env.map_size = 12  # np.random.randint(low=10, high=20, size=1)[0]
 
     # wrappers
     # env = SaveTrajectories(env, save_path="saved_trajectories")
@@ -105,20 +107,20 @@ if __name__ == "__main__":
 
     # novelty_wrappers
     # novelty_name:
-    # axe, axetobreak, fence, additem, replaceitem, remapaction, addchop, breakincrease, extractincdec, firewall
-    novelty_name = ''
+    # addchop, additem, axe, axetobreak, breakincrease, extractincdec, fence, firewall, remapaction, replaceitem
+    novelty_name = 'firewall'
     # novelty_arg1:
-    # axe & axetobreak - wooden, iron | fence - oak, jungle | additem - any item name (e.g. arrow, spring)
-    # replaceitem - any existing item (e.g. wall) | breakincrease - optional: any existing item (e.g. tree_log)
-    # extractincdec - increase or decrease
+    # additem - any item name (e.g. arrow, spring) | axe & axetobreak - iron, wooden |
+    # breakincrease - optional: any existing item (e.g. tree_log) | extractincdec - increase or decrease |
+    # fence - oak, jungle | replaceitem - any existing item (e.g. wall) |
     novelty_arg1 = ''
     # novelty_arg2:
     # replaceitem - any item name (e.g. brick)
     novelty_arg2 = ''
-    difficulty = 'easy'  # easy, medium, hard
+    difficulty = 'medium'  # easy, medium, hard
 
     if novelty_name:
-        env = inject_novelty(env, difficulty, novelty_name, novelty_arg1, novelty_arg2)
+        env = inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2)
 
     # env = BlockItem(env)
     # env = ReplaceItem(env, 'easy', 'wall', 'brick')
@@ -126,10 +128,10 @@ if __name__ == "__main__":
     KEY_ACTION_DICT = assign_keys(env)
     # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
     print("action_space:", env.action_space)
-    print("actions_id:", env.actions_id)
+    print("actions_id:", len(env.actions_id), env.actions_id)
     print("items_id: ", len(env.items_id), env.items_id)
+    print("inventory_items_quantity: ", len(env.inventory_items_quantity), env.inventory_items_quantity)
 
-    # env.map_size = np.random.randint(low=10, high=20, size=1)[0]
     # fix_item_location('crafting_table', (3, 2))
 
     obs = env.reset()

@@ -193,10 +193,11 @@ class PogostickV1Env(gym.Env):
         if 'air' in items:
             items_id['air'] = 0
         for item in sorted(items):
-            if 'air' in items:
-                items_id[item] = len(items_id)
-            else:
-                items_id[item] = len(items_id) + 1
+            if item != 'air':
+                if 'air' in items:
+                    items_id[item] = len(items_id)
+                else:
+                    items_id[item] = len(items_id) + 1
 
         return items_id
 
@@ -276,8 +277,6 @@ class PogostickV1Env(gym.Env):
 
                 if self.block_in_front_str == 'tree_log':
                     reward = 10
-                else:
-                    reward = -10  # break something else
             else:
                 result = False
                 message = "Cannot break " + self.block_in_front_str
@@ -490,7 +489,7 @@ class PogostickV1Env(gym.Env):
 
         for item in new_items_quantity:
             self.items.add(item)
-            self.items_id.setdefault(item, len(self.items_id) + 1)
+            self.items_id.setdefault(item, len(self.items_id))
             self.items_quantity.update({item: new_items_quantity[item]})
         self.reset()
 

@@ -2,17 +2,21 @@ import time
 
 import gym
 import gym_novel_gridworlds
+from gym_novel_gridworlds.wrappers import SaveTrajectories, LimitActions
+from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
 
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import PPO2
 
 
-env_id = 'NovelGridworld-v3'
+env_id = 'NovelGridworld-Bow-v0'  # 'NovelGridworld-v1'
 env = gym.make(env_id)
+env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
+env = LidarInFront(env)
 
 # Load the trained agent
-model = PPO2.load('NovelGridworld-v3_200000_8beams0filled40range3items_in_360degrees_lfd_best_model')
+model = PPO2.load('NovelGridworld-Bow-v0_400000_8beams0filled11hypotenuserange3items_in_360degrees_best_model')
 
 # env.map_size = 20
 # env.items_quantity = {'crafting_table': 2}

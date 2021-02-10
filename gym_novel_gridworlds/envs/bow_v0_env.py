@@ -36,7 +36,7 @@ class BowV0Env(gym.Env):
         self.block_in_front_str = 'air'
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
-        self.items = {'air', 'bow', 'crafting_table', 'stick', 'string', 'wall'}
+        self.items = {'air', 'bow', 'crafting_table', 'plank', 'stick', 'string', 'tree_log', 'wall', 'wool'}
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
         self.unbreakable_items = {'air', 'wall'}
         self.goal_item_to_craft = 'bow'
@@ -52,7 +52,9 @@ class BowV0Env(gym.Env):
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Extract_string': 4}
         self.actions_id.update(self.manipulation_actions_id)
-        self.recipes = {'bow': {'input': {'stick': 3, 'string': 3}, 'output': {'bow': 1}}}
+        self.recipes = {'bow': {'input': {'stick': 3, 'string': 3}, 'output': {'bow': 1}},
+                        'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
+                        'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}}}
         # Add a Craft action for each recipe
         self.craft_actions_id = {'Craft_' + item: len(self.actions_id) + i for i, item in
                                  enumerate(sorted(self.recipes.keys()))}
@@ -271,10 +273,8 @@ class BowV0Env(gym.Env):
                 self.map[block_r][block_c] = 0
                 self.inventory_items_quantity[self.block_in_front_str] += 1
 
-                if self.block_in_front_str == 'tree_log':
+                if self.block_in_front_str in ['stick', 'string']:
                     reward = 10
-                else:
-                    reward = -10  # break something else
             else:
                 result = False
                 message = "Cannot break " + self.block_in_front_str
@@ -285,11 +285,11 @@ class BowV0Env(gym.Env):
             step_cost = 120.0  # default step_cost
 
             if self.block_in_front_str == 'wool':
-                self.inventory_items_quantity['string'] += 4  # Extract_rubber
+                self.inventory_items_quantity['string'] += 4  # Extract_string
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
                 reward = 15
-                step_cost = 50000
+                step_cost = 5000
             else:
                 result = False
                 message = "No wool found"
@@ -454,7 +454,7 @@ class BowV0Env(gym.Env):
 
         for item in new_items_quantity:
             self.items.add(item)
-            self.items_id.setdefault(item, len(self.items_id) + 1)
+            self.items_id.setdefault(item, len(self.items_id))
             self.items_quantity.update({item: new_items_quantity[item]})
         self.reset()
 
@@ -551,13 +551,15 @@ class BowV0Env(gym.Env):
         plt.text(-(self.map_size // 2) - 0.5, 2.25, info, fontsize=10, bbox=props)  # x, y
 
         if self.last_done:
-            you_win = "YOU WIN " + self.env_id + "!!!"
-            props = dict(boxstyle='round', facecolor='w', alpha=1)
-            plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
-            if self.inventory_items_quantity['bow'] >= 1:
-                you_win = "YOU CRAFTED " + self.goal_item_to_craft.upper() + "!!!"
+            if self.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                you_win = "YOU WIN " + self.env_id + "!!!"
+                you_win += "\nYOU CRAFTED " + self.goal_item_to_craft.upper() + "!!!"
                 props = dict(boxstyle='round', facecolor='w', alpha=1)
-                plt.text(0 - 0.1, (self.map_size // 2) + 1, you_win, fontsize=18, bbox=props)
+                plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
+            else:
+                you_win = "YOU CAN'T WIN " + self.env_id + "!!!"
+                props = dict(boxstyle='round', facecolor='w', alpha=1)
+                plt.text(0 - 0.1, (self.map_size // 2), you_win, fontsize=18, bbox=props)
 
         cmap = get_cmap(color_map)
 

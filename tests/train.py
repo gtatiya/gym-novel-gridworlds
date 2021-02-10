@@ -3,6 +3,8 @@ import time
 
 import gym
 import gym_novel_gridworlds
+from gym_novel_gridworlds.wrappers import SaveTrajectories, LimitActions
+from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
 
 import numpy as np
 
@@ -33,6 +35,8 @@ class RenderOnEachStep(BaseCallback):
         self.env = env
 
     def _on_step(self):
+        # print("observation: ", self.env.observation(None))
+        # print("observation: ", self.env.get_observation())
         self.env.render()
         # time.sleep(0.5)
 
@@ -86,18 +90,20 @@ class RemapActionOnEachStep(BaseCallback):
 
 
 if __name__ == "__main__":
-    env_id = 'NovelGridworld-v3'
-    timesteps = 200000  # 200000
-    experiment_dir = 'results2'  # 'models', results
+    env_id = 'NovelGridworld-Bow-v0'  # 'NovelGridworld-v1'
+    timesteps = 400000  # 200000
+    experiment_dir = 'results'  # 'models', results
     experiment_code1 = env_id + '_' + str(timesteps)
-    experiment_code2 = '_' + '8beams0filled40range3items_in_360degrees_lfd'  # lfd
+    experiment_code2 = '_' + '8beams0filled11hypotenuserange3items_in_360degrees'  # lfd
     model_code = experiment_code1 + experiment_code2
     log_dir = experiment_dir + os.sep + env_id + experiment_code2
-    pretrain = True
+    pretrain = False
 
     os.makedirs(log_dir, exist_ok=True)
 
     env = gym.make(env_id)
+    env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
+    env = LidarInFront(env)
     env = Monitor(env, log_dir)
     # callback = RenderOnEachStep(env)
     callback = SaveOnBestTrainingRewardCallback(1000, log_dir, model_code + '_best_model')
@@ -111,19 +117,19 @@ if __name__ == "__main__":
     # the env is now wrapped automatically when passing it to the constructor
     # env = DummyVecEnv([lambda: env])
 
-    # model = PPO2(MlpPolicy, env, verbose=1)
+    model = PPO2(MlpPolicy, env, verbose=1)
 
-    env = DummyVecEnv([lambda: env])
-    model = PPO2.load('NovelGridworld-v3_200000_8beams0filled40range3items_in_360degrees_lfd_OLD', env)
+    # env = DummyVecEnv([lambda: env])
+    # model = PPO2.load('NovelGridworld-Bow-v0_200000_8beams0filled11hypotenuserange3items_in_360degrees_best_model', env)
 
     # Pretrain the model from human recored dataset
     # specify `traj_limitation=-1` for using the whole dataset
     if pretrain:
-        dataset = ExpertDataset(expert_path='expert_NovelGridworld-v3_50demos2.npz', traj_limitation=-1, batch_size=128)
+        dataset = ExpertDataset(expert_path='expert_NovelGridworld-Bow-v0_10demos.npz', traj_limitation=-1, batch_size=128)
         model.pretrain(dataset, n_epochs=2000)
-        model.save(model_code)
+        model.save(log_dir + os.sep + model_code)
 
     # model.learn(total_timesteps=timesteps)
     model.learn(total_timesteps=timesteps, callback=callback)
 
-    model.save(model_code + '_last_model')
+    model.save(log_dir + os.sep + model_code + '_last_model')
