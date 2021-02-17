@@ -14,8 +14,10 @@ log_dir = 'results'
 # agents = ['NovelGridworld-v2_8beams_in_360degrees',
 #           'NovelGridworld-v2_8beams0filled40range_in_360degrees',
 #           'NovelGridworld-v2_8beams0filled40range3items_in_360degrees']
-agents = ['NovelGridworld-Bow-v0_8beams0filled11hypotenuserange3items_in_360degrees']
-
+# agents = ['NovelGridworld-Bow-v0_8beams0filled11hypotenuserange3items_in_360degrees']
+# agents = ['NovelGridworld-Bow-v0_A2C']
+# agents = ['NovelGridworld-Bow-v0_8beams0filled11hypotenuserange3items_in_360degrees']
+agents = ['NovelGridworld-Bow-v0_']
 # log_dir = r"C:\Users\GyanT\Documents\GitHub\Reinforcement-Learning\5_DQN\experiments\\"
 # agents = ['NovelGridworld-v0_1_DQN', 'NovelGridworld-v0_2_Dueling_DQN', 'NovelGridworld-v0_3_Dueling_Double_DQN',
 #           'NovelGridworld-v0_4_Double_PER_DQN', 'NovelGridworld-v0_5_Dueling_Double_PER_DQN']
@@ -37,5 +39,5 @@ plt.title('Learning Curve')
 plt.ylabel("Episodes Rewards")
 plt.xlabel("Timesteps")
 plt.legend()
-plt.savefig(log_dir + os.sep + "learning_curve.png", bbox_inches='tight', dpi=100)
+plt.savefig(log_dir + os.sep + "learning_curve.png", bbox_inches='tight', dpi=600)
 plt.show()

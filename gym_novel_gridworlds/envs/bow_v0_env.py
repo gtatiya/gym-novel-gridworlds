@@ -36,9 +36,10 @@ class BowV0Env(gym.Env):
         self.block_in_front_str = 'air'
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
-        self.items = {'air', 'bow', 'crafting_table', 'plank', 'stick', 'string', 'tree_log', 'wall', 'wool'}
+        self.items = {'air', 'bow', 'crafting_table', 'stick', 'string', 'wall'}
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
-        self.unbreakable_items = {'air', 'wall'}
+        # self.unbreakable_items = {'air', 'wall'}
+        self.unbreakable_items = {'air', 'crafting_table', 'wall'}
         self.goal_item_to_craft = 'bow'
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'stick': 3, 'string': 3}
@@ -76,7 +77,8 @@ class BowV0Env(gym.Env):
 
         # Reward
         self.last_reward = 0  # last received reward
-
+        self.reward_done = 1000
+        self.reward_break = 10
         self.last_done = False  # last done
 
     def reset(self, map_size=None, items_id=None, items_quantity=None):
@@ -274,7 +276,9 @@ class BowV0Env(gym.Env):
                 self.inventory_items_quantity[self.block_in_front_str] += 1
 
                 if self.block_in_front_str in ['stick', 'string']:
-                    reward = 10
+                    reward = self.reward_break
+                # else:
+                #     reward = -10  # break something else
             else:
                 result = False
                 message = "Cannot break " + self.block_in_front_str
@@ -317,8 +321,10 @@ class BowV0Env(gym.Env):
 
         done = False
         if self.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-            reward = 50
+            reward = self.reward_done
             done = True
+        # elif len(np.where(self.map == self.items_id['crafting_table'])[0]) < 1:
+        #     done = True
 
         info = {'result': result, 'step_cost': step_cost, 'message': message}
 

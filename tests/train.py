@@ -1,5 +1,7 @@
+from gym_novel_gridworlds.novelty_wrappers import inject_novelty
 import os
 import time
+import uuid 
 
 import gym
 import gym_novel_gridworlds
@@ -12,6 +14,7 @@ from stable_baselines.common.env_checker import check_env
 
 from stable_baselines import PPO2
 from stable_baselines import DQN
+from stable_baselines import A2C
 from stable_baselines.gail import ExpertDataset
 
 from stable_baselines.common.policies import MlpPolicy
@@ -84,17 +87,21 @@ class RemapActionOnEachStep(BaseCallback):
         self.step_num = step_num
 
     def _on_step(self):
-        if self.n_calls % self.step_num == 0:
+
+        if self.n_calls == self.step_num:
             # self.env = remap_action(self.env)
-            self.env.remap_action()
+            print ("self.n_calls = {}".format(self.n_calls))
+            self.env = inject_novelty(self.env, 'firewall', 'hard', '', '')
+            # self.env.remap_action()
 
 
 if __name__ == "__main__":
     env_id = 'NovelGridworld-Bow-v0'  # 'NovelGridworld-v1'
-    timesteps = 400000  # 200000
+    timesteps = 200000  # 200000
     experiment_dir = 'results'  # 'models', results
     experiment_code1 = env_id + '_' + str(timesteps)
-    experiment_code2 = '_' + '8beams0filled11hypotenuserange3items_in_360degrees'  # lfd
+    experiment_code2 = '_' # + '8beams0filled11hypotenuserange3items_in_360degrees'  # lfd
+    # experiment_code2 = '_' + 'A2C'  # lfd
     model_code = experiment_code1 + experiment_code2
     log_dir = experiment_dir + os.sep + env_id + experiment_code2
     pretrain = False
@@ -106,8 +113,8 @@ if __name__ == "__main__":
     env = LidarInFront(env)
     env = Monitor(env, log_dir)
     # callback = RenderOnEachStep(env)
-    callback = SaveOnBestTrainingRewardCallback(1000, log_dir, model_code + '_best_model')
-    # callback = RemapActionOnEachStep(env, 50000)
+    # callback = SaveOnBestTrainingRewardCallback(1000, log_dir, model_code + '_best_model')
+    callback = RemapActionOnEachStep(env, 5000)
 
     # multiprocess environment
     # env = make_vec_env('NovelGridworld-v0', n_envs=4)
@@ -117,7 +124,8 @@ if __name__ == "__main__":
     # the env is now wrapped automatically when passing it to the constructor
     # env = DummyVecEnv([lambda: env])
 
-    model = PPO2(MlpPolicy, env, verbose=1)
+    model = PPO2(MlpPolicy, env, n_steps=256, verbose=1, tensorboard_log="./ppo2_bow_v_0_tensorboard/")
+    # model = A2C(MlpPolicy, env, n_steps=150, verbose=1, tensorboard_log="./a2c_bow_v_0_tensorboard/")
 
     # env = DummyVecEnv([lambda: env])
     # model = PPO2.load('NovelGridworld-Bow-v0_200000_8beams0filled11hypotenuserange3items_in_360degrees_best_model', env)
