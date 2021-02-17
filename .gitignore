@@ -17,3 +17,4 @@ models/
 models2/
 results/
 saved_trajectories/
+ppo2_bow_v_0_tensorboard/

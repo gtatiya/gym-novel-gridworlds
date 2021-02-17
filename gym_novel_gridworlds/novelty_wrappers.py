@@ -766,7 +766,7 @@ class FireWall(gym.core.Wrapper):
             close_to_fire_wall = True
 
         if close_to_fire_wall:
-            reward = -50
+            reward = -400
             done = True
             info['message'] = 'You died due to fire_wall'
 
