@@ -92,7 +92,7 @@ def fix_item_location(item, location):
 
 
 if __name__ == "__main__":
-    env_id = 'NovelGridworld-Pogostick-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
+    env_id = 'NovelGridworld-Pogostick-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
     env = gym.make(env_id)
 
     # env.map_size = 12  # np.random.randint(low=10, high=20, size=1)[0]
@@ -107,8 +107,8 @@ if __name__ == "__main__":
 
     # novelty_wrappers
     # novelty_name:
-    # addchop, additem, axe, axetobreak, breakincrease, extractincdec, fence, firewall, remapaction, replaceitem
-    novelty_name = 'firewall'
+    # addchop, additem, addjump, axe, axetobreak, breakincrease, extractincdec, fence, firewall, remapaction, replaceitem
+    novelty_name = ''
     # novelty_arg1:
     # additem - any item name (e.g. arrow, spring) | axe & axetobreak - iron, wooden |
     # breakincrease - optional: any existing item (e.g. tree_log) | extractincdec - increase or decrease |
@@ -117,6 +117,8 @@ if __name__ == "__main__":
     # novelty_arg2:
     # replaceitem - any item name (e.g. brick)
     novelty_arg2 = ''
+    # difficulty
+    # Only used for: additem, axe, axetobreak, fence, firewall, remapaction, replaceitem
     difficulty = 'medium'  # easy, medium, hard
 
     if novelty_name:

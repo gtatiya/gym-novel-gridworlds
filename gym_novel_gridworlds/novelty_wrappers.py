@@ -686,7 +686,7 @@ class ReplaceItem(gym.core.Wrapper):
         self.item_to_replace_with = item_to_replace_with
         assert self.item_to_replace in self.env.items_id, "Item to replace (" + self.item_to_replace + \
                                                           ") is not in the original map"
-        assert self.item_to_replace_with not in self.env.items_id, "Item to replace with (" + self.item_to_replace_with\
+        assert self.item_to_replace_with not in self.env.items_id, "Item to replace with (" + self.item_to_replace_with \
                                                                    + ") should be a new item"
 
         self.env.items.add(self.item_to_replace_with)
@@ -738,7 +738,7 @@ class FireWall(gym.core.Wrapper):
     def __init__(self, env, difficulty='hard'):
         super().__init__(env)
 
-        self.env2 = ReplaceItem(env, difficulty, item_to_replace = 'wall', item_to_replace_with = 'fire_wall')
+        self.env2 = ReplaceItem(env, difficulty, item_to_replace='wall', item_to_replace_with='fire_wall')
 
     def reset(self):
 
@@ -841,7 +841,7 @@ class BlockItem(gym.core.Wrapper):
 class AddChopAction(gym.core.Wrapper):
     """
     Novelty wrapper to add chop action
-    It's like break action, but instead of 1 item, agent will get 2 items, but step_cost will be higher
+    It's like break action, but instead of 1 item, agent will get 2 items, but step_cost will be higher (1.2 times)
     """
 
     def __init__(self, env):
@@ -1052,7 +1052,7 @@ class ExtractIncDec(gym.core.Wrapper):
                     if self.incdec == 'increase':
                         self.inventory_items_quantity['string'] += 4 * 2  # Extract_string
                     else:
-                        self.inventory_items_quantity['string'] += 4 // 2 # Extract_string
+                        self.inventory_items_quantity['string'] += 4 // 2  # Extract_string
                     block_r, block_c = self.block_in_front_location
                     self.map[block_r][block_c] = 0
                     reward = 15
@@ -1098,14 +1098,14 @@ class ExtractIncDec(gym.core.Wrapper):
 
         return observation, reward, done, info
 
+
 #################### Novelty Helper ####################
 
-def inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2):
-
-    assert novelty_name in ['addchop', 'additem', 'axe', 'axetobreak', 'breakincrease', 'extractincdec', 'fence',
-                            'firewall', 'remapaction', 'replaceitem'],\
-        "novelty_name must be one of 'addchop', 'additem', 'axe', 'axetobreak', 'breakincrease', 'extractincdec'," \
-        "'fence', 'firewall', 'remapaction', 'replaceitem'"
+def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelty_arg2=''):
+    assert novelty_name in ['addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease', 'extractincdec',
+                            'fence', 'firewall', 'remapaction', 'replaceitem'], \
+        "novelty_name must be one of 'addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease'," \
+        "'extractincdec', 'fence', 'firewall', 'remapaction', 'replaceitem'"
     if novelty_name in ['additem', 'axe', 'axetobreak', 'fence', 'firewall', 'remapaction', 'replaceitem']:
         assert difficulty in ['easy', 'medium', 'hard'], "difficulty must be one of 'easy', 'medium', 'hard'"
 
@@ -1115,8 +1115,10 @@ def inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2):
         assert novelty_arg1, "For additem novelty, novelty_arg1 (name of the item to add) is needed"
 
         env = AddItem(env, difficulty, novelty_arg1)
+    elif novelty_name == 'addjump':
+        env = AddJumpAction(env)
     elif novelty_name == 'axe':
-        assert novelty_arg1 in ['wooden', 'iron'],\
+        assert novelty_arg1 in ['wooden', 'iron'], \
             "For axe novelty, novelty_arg1 (attribute of axe, e.g. wooden, iron) is needed"
 
         if difficulty == 'easy':
@@ -1126,7 +1128,7 @@ def inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2):
         elif difficulty == 'hard':
             env = AxeHard(env, novelty_arg1)
     elif novelty_name == 'axetobreak':
-        assert novelty_arg1 in ['wooden', 'iron'],\
+        assert novelty_arg1 in ['wooden', 'iron'], \
             "For axe novelty, novelty_arg1 (attribute of axe, e.g. wooden, iron) is needed"
 
         if difficulty == 'easy':
@@ -1137,6 +1139,8 @@ def inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2):
             env = AxetoBreakHard(env, novelty_arg1)
     elif novelty_name == 'breakincrease':
         if novelty_arg1:
+            assert novelty_arg1 in env.items, env.itemtobreakmore + " is not in " + env.env_id
+
             env = BreakIncrease(env, novelty_arg1)
         else:
             env = BreakIncrease(env)

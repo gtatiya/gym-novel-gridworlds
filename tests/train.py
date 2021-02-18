@@ -35,8 +35,6 @@ class RenderOnEachStep(BaseCallback):
         self.env = env
 
     def _on_step(self):
-        # print("observation: ", self.env.observation(None))
-        # print("observation: ", self.env.get_observation())
         self.env.render()
         # time.sleep(0.5)
 
@@ -71,7 +69,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                     self.model.save(self.save_path)
 
 
-class RemapActionOnEachStep(BaseCallback):
+class RemapActionOnStep(BaseCallback):
     """
     Callback for saving a model (the check is done every ``check_freq`` steps)
     based on the training reward (in practice, we recommend using ``EvalCallback``).
@@ -79,12 +77,12 @@ class RemapActionOnEachStep(BaseCallback):
     """
 
     def __init__(self, env, step_num):
-        super(RemapActionOnEachStep, self).__init__()
+        super(RemapActionOnStep, self).__init__()
         self.env = env
         self.step_num = step_num
 
     def _on_step(self):
-        if self.n_calls % self.step_num == 0:
+        if self.n_calls == self.step_num:
             # self.env = remap_action(self.env)
             self.env.remap_action()
 
