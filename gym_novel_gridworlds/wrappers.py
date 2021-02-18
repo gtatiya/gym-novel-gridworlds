@@ -69,9 +69,8 @@ class LimitActions(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        assert action_id in self.limited_actions_id.values(), "Action ID " + str(action_id) + " is not valid, max " \
-                                                                                              "action ID is " + str(
-            len(self.limited_actions_id)-1)
+        assert action_id in self.limited_actions_id.values(), "Action ID " + str(action_id) + " is not valid, max" \
+                                                              "action ID is " + str(len(self.limited_actions_id)-1)
         last_action = list(self.limited_actions_id.keys())[list(self.limited_actions_id.values()).index(action_id)]
 
         assert last_action in self.actions_id, last_action + " is not a valid action for " + self.env_id

@@ -92,14 +92,14 @@ def fix_item_location(item, location):
 
 
 if __name__ == "__main__":
-    env_id = 'NovelGridworld-Pogostick-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
+    env_id = 'NovelGridworld-Bow-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
     env = gym.make(env_id)
 
     # env.map_size = 12  # np.random.randint(low=10, high=20, size=1)[0]
 
     # wrappers
     # env = SaveTrajectories(env, save_path="saved_trajectories")
-    # env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
+    env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
 
     # observation_wrappers
     # env = LidarInFront(env, num_beams=8)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     # novelty_wrappers
     # novelty_name:
     # addchop, additem, addjump, axe, axetobreak, breakincrease, extractincdec, fence, firewall, remapaction, replaceitem
-    novelty_name = ''
+    novelty_name = 'remapaction'
     # novelty_arg1:
     # additem - any item name (e.g. arrow, spring) | axe & axetobreak - iron, wooden |
     # breakincrease - optional: any existing item (e.g. tree_log) | extractincdec - increase or decrease |
@@ -159,12 +159,6 @@ if __name__ == "__main__":
         print("")
 
         if i == 2:
-            # print("action_str: ", env.actions_id)
-            # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
-            # env.remap_action()
-            # KEY_ACTION_DICT = assign_keys(env_id)
-            # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
-
             # env.add_new_items({'rock': 3, 'axe': 1})
             # env.block_item(item_to_block='crafting_table', item_to_block_from='tree_log')
             pass

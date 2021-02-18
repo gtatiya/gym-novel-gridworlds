@@ -5,6 +5,7 @@ import gym
 import gym_novel_gridworlds
 from gym_novel_gridworlds.wrappers import SaveTrajectories, LimitActions
 from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
+from gym_novel_gridworlds.novelty_wrappers import inject_novelty
 
 import numpy as np
 
@@ -85,6 +86,7 @@ class RemapActionOnStep(BaseCallback):
         if self.n_calls == self.step_num:
             # self.env = remap_action(self.env)
             self.env.remap_action()
+            # self.env = inject_novelty(self.env, 'firewall', 'hard', '', '')
 
 
 if __name__ == "__main__":

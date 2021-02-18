@@ -780,23 +780,26 @@ class FireWall(gym.core.Wrapper):
 def remap_action_difficulty(env, difficulty='hard'):
     """
     Remap actions randomly
-
+    If LimitActions wrapper is used only limited_actions will be remapped regardless of any difficulty
     """
 
-    if difficulty == 'easy':
-        env.manipulation_actions_id = env.remap_action(env.manipulation_actions_id, 0)
-        env.actions_id.update(env.manipulation_actions_id)
-    elif difficulty == 'medium':
-        env.manipulation_actions_id = env.remap_action(env.manipulation_actions_id, 0)
-        env.craft_actions_id = env.remap_action(env.craft_actions_id, len(env.manipulation_actions_id))
-        env.actions_id.update(env.manipulation_actions_id)
-        env.actions_id.update(env.craft_actions_id)
+    if hasattr(env, 'limited_actions_id'):
+        env.limited_actions_id = env.remap_action(env.limited_actions_id, 0)
     else:
-        env.actions_id = env.remap_action(env.actions_id, 0)
-        env.craft_actions_id = {action: env.actions_id[action] for action in env.actions_id if
-                                action.startswith('Craft')}
-        env.select_actions_id = {action: env.actions_id[action] for action in env.actions_id if
-                                 action.startswith('Select')}
+        if difficulty == 'easy':
+            env.manipulation_actions_id = env.remap_action(env.manipulation_actions_id, 0)
+            env.actions_id.update(env.manipulation_actions_id)
+        elif difficulty == 'medium':
+            env.manipulation_actions_id = env.remap_action(env.manipulation_actions_id, 0)
+            env.craft_actions_id = env.remap_action(env.craft_actions_id, len(env.manipulation_actions_id))
+            env.actions_id.update(env.manipulation_actions_id)
+            env.actions_id.update(env.craft_actions_id)
+        else:
+            env.actions_id = env.remap_action(env.actions_id, 0)
+            env.craft_actions_id = {action: env.actions_id[action] for action in env.actions_id if
+                                    action.startswith('Craft')}
+            env.select_actions_id = {action: env.actions_id[action] for action in env.actions_id if
+                                     action.startswith('Select')}
 
     return env
 
