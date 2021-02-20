@@ -78,6 +78,8 @@ class NovelGridworldV6Env(gym.Env):
 
         # Reward
         self.last_reward = 0  # last received reward
+        self.reward_intermediate = 10
+        self.reward_done = 50
 
         self.last_done = False  # last done
 
@@ -276,15 +278,13 @@ class NovelGridworldV6Env(gym.Env):
                 self.inventory_items_quantity[self.block_in_front_str] += 1
 
                 if self.block_in_front_str == 'tree_log':
-                    reward = 10
+                    reward = self.reward_intermediate
             else:
                 result = False
                 message = "Cannot break " + self.block_in_front_str
 
             step_cost = 3600.0
         elif action_id == self.actions_id['Place_tree_tap']:
-            reward = -1  # default reward to Place_tree_tap
-
             if self.inventory_items_quantity['tree_tap'] >= 1:
                 if self.block_in_front_str == 'air':
                     r, c = self.block_in_front_location
@@ -295,7 +295,7 @@ class NovelGridworldV6Env(gym.Env):
                     # Make sure that block_in_front_location is next to a tree
                     block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
                     if block_in_front_next_to_tree:
-                        reward = 20
+                        reward = self.reward_intermediate
                 else:
                     result = False
                     message = "Block " + self.block_in_front_str + " already exists when trying to place block"
@@ -305,7 +305,6 @@ class NovelGridworldV6Env(gym.Env):
 
             step_cost = 300.0
         elif action_id == self.actions_id['Extract_rubber']:
-            reward = -1  # default reward
             step_cost = 120.0  # default step_cost
 
             # Make sure that block_in_front_location is next to a tree
@@ -314,7 +313,7 @@ class NovelGridworldV6Env(gym.Env):
             if self.block_in_front_str == 'tree_tap':
                 if block_in_front_next_to_tree:
                     self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
-                    reward = 15
+                    reward = self.reward_intermediate
                     step_cost = 50000
                 else:
                     result = False
@@ -346,7 +345,7 @@ class NovelGridworldV6Env(gym.Env):
 
         done = False
         if self.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-            reward = 50
+            reward = self.reward_done
             done = True
 
         info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -445,7 +444,7 @@ class NovelGridworldV6Env(gym.Env):
                     message = 'Need to be in front of crafting_table'
                     return reward, result, step_cost, message
 
-            reward = 10  # default reward to craft in a good way
+            reward = self.reward_intermediate  # default reward to craft in a good way
 
             # Reduce ingredients from the inventory
             for item in self.recipes[item_to_craft]['input']:

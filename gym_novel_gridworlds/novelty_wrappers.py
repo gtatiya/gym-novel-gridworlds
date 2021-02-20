@@ -190,7 +190,7 @@ class AxeHard(gym.core.Wrapper):
                     message = 'Need to be in front of crafting_table'
                     return reward, result, step_cost, message
 
-            reward = 10  # default reward to craft in a good way
+            reward = self.reward_intermediate  # default reward to craft in a good way
 
             # Reduce ingredients from the inventory
             for item in self.env.recipes[item_to_craft]['input']:
@@ -257,10 +257,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                    if self.env.block_in_front_str == 'tree_log':
-                        reward = 10
-                    else:
-                        reward = -10  # break something else
+                    reward = self.reward_intermediate
 
                     step_cost = step_cost * 0.5  # 1800.0
                 elif self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'iron_axe':
@@ -268,10 +265,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                    if self.env.block_in_front_str == 'tree_log':
-                        reward = 10
-                    else:
-                        reward = -10  # break something else
+                    reward = self.reward_intermediate
 
                     step_cost = step_cost * 0.25  # 900.0
                 else:
@@ -288,7 +282,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-                reward = 50
+                reward = self.reward_done
                 done = True
 
             info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -339,10 +333,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                    if self.env.block_in_front_str == 'tree_log':
-                        reward = 10
-                    else:
-                        reward = -10  # break something else
+                    reward = self.reward_intermediate
 
                     step_cost = step_cost * 0.5  # 1800.0
                 elif self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'iron_axe':
@@ -350,10 +341,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                    if self.env.block_in_front_str == 'tree_log':
-                        reward = 10
-                    else:
-                        reward = -10  # break something else
+                    reward = self.reward_intermediate
 
                     step_cost = step_cost * 0.25  # 900.0
                 else:
@@ -370,7 +358,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-                reward = 50
+                reward = self.reward_done
                 done = True
 
             info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -443,7 +431,7 @@ class AxetoBreakHard(gym.core.Wrapper):
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-                reward = 50
+                reward = self.reward_done
                 done = True
 
             info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -469,10 +457,7 @@ class AxetoBreakHard(gym.core.Wrapper):
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                    if self.env.block_in_front_str == 'tree_log':
-                        reward = 10
-                    else:
-                        reward = -10  # break something else
+                    reward = self.reward_intermediate
 
                     step_cost = step_cost * 0.5  # 1800.0
                 elif self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'iron_axe':
@@ -480,10 +465,7 @@ class AxetoBreakHard(gym.core.Wrapper):
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                    if self.env.block_in_front_str == 'tree_log':
-                        reward = 10
-                    else:
-                        reward = -10  # break something else
+                    reward = self.reward_intermediate
 
                     step_cost = step_cost * 0.25  # 900.0
                 else:
@@ -500,7 +482,7 @@ class AxetoBreakHard(gym.core.Wrapper):
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-                reward = 50
+                reward = self.reward_done
                 done = True
 
             info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -559,7 +541,7 @@ class AxetoBreakHard(gym.core.Wrapper):
                     message = 'Need to be in front of crafting_table'
                     return reward, result, step_cost, message
 
-            reward = 10  # default reward to craft in a good way
+            reward = self.reward_intermediate  # default reward to craft in a good way
 
             # Reduce ingredients from the inventory
             for item in self.env.recipes[item_to_craft]['input']:
@@ -766,7 +748,7 @@ class FireWall(gym.core.Wrapper):
             close_to_fire_wall = True
 
         if close_to_fire_wall:
-            reward = -50
+            reward = -self.reward_done // 2
             done = True
             info['message'] = 'You died due to fire_wall'
 
@@ -872,10 +854,8 @@ class AddChopAction(gym.core.Wrapper):
                 self.map[block_r][block_c] = 0
                 self.inventory_items_quantity[self.block_in_front_str] += 1 * 2
 
-                if self.block_in_front_str == 'tree_log':
-                    reward = 10
-                else:
-                    reward = -10  # break something else
+                reward = self.reward_intermediate
+
             else:
                 result = False
                 message = "Cannot chop " + self.block_in_front_str
@@ -887,7 +867,7 @@ class AddChopAction(gym.core.Wrapper):
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-                reward = 50
+                reward = self.reward_done
                 done = True
 
             info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -948,7 +928,7 @@ class AddJumpAction(gym.core.Wrapper):
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-                reward = 50
+                reward = self.reward_done
                 done = True
 
             info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -1003,10 +983,8 @@ class BreakIncrease(gym.core.Wrapper):
                 else:
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
 
-                if self.env.block_in_front_str == 'tree_log':
-                    reward = 10
-                else:
-                    reward = -10  # break something else
+                reward = self.reward_intermediate
+
             else:
                 result = False
                 message = "Cannot break " + self.env.block_in_front_str
@@ -1022,7 +1000,7 @@ class BreakIncrease(gym.core.Wrapper):
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-                reward = 50
+                reward = self.reward_done
                 done = True
 
             info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -1068,7 +1046,7 @@ class ExtractIncDec(gym.core.Wrapper):
                         self.inventory_items_quantity['string'] += 4 // 2  # Extract_string
                     block_r, block_c = self.block_in_front_location
                     self.map[block_r][block_c] = 0
-                    reward = 15
+                    reward = self.reward_intermediate
                     step_cost = 5000
                 else:
                     result = False
@@ -1080,7 +1058,7 @@ class ExtractIncDec(gym.core.Wrapper):
                     if block_in_front_next_to_tree:
                         if self.incdec == 'increase':
                             self.inventory_items_quantity['rubber'] += 1 * 2  # Extract_rubber
-                        reward = 15
+                        reward = self.reward_intermediate
                         step_cost = 50000
                     else:
                         result = False
@@ -1096,7 +1074,7 @@ class ExtractIncDec(gym.core.Wrapper):
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-                reward = 50
+                reward = self.reward_done
                 done = True
 
             info = {'result': result, 'step_cost': step_cost, 'message': message}

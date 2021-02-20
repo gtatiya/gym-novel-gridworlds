@@ -76,6 +76,8 @@ class BowV1Env(gym.Env):
 
         # Reward
         self.last_reward = 0  # last received reward
+        self.reward_intermediate = 10
+        self.reward_done = 50
 
         self.last_done = False  # last done
 
@@ -274,21 +276,20 @@ class BowV1Env(gym.Env):
                 self.inventory_items_quantity[self.block_in_front_str] += 1
 
                 if self.block_in_front_str == 'tree_log':
-                    reward = 10
+                    reward = self.reward_intermediate
             else:
                 result = False
                 message = "Cannot break " + self.block_in_front_str
 
             step_cost = 3600.0
         elif action_id == self.actions_id['Extract_string']:
-            reward = -1  # default reward
             step_cost = 120.0  # default step_cost
 
             if self.block_in_front_str == 'wool':
                 self.inventory_items_quantity['string'] += 4  # Extract_string
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
-                reward = 15
+                reward = self.reward_intermediate
                 step_cost = 5000
             else:
                 result = False
@@ -317,7 +318,7 @@ class BowV1Env(gym.Env):
 
         done = False
         if self.inventory_items_quantity[self.goal_item_to_craft] >= 1:
-            reward = 50
+            reward = self.reward_done
             done = True
 
         info = {'result': result, 'step_cost': step_cost, 'message': message}
@@ -412,7 +413,7 @@ class BowV1Env(gym.Env):
                     message = 'Need to be in front of crafting_table'
                     return reward, result, step_cost, message
 
-            reward = 10  # default reward to craft in a good way
+            reward = self.reward_done  # default reward to craft in a good way
 
             # Reduce ingredients from the inventory
             for item in self.recipes[item_to_craft]['input']:
