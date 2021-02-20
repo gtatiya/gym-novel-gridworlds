@@ -74,10 +74,10 @@ class LidarInFront(gym.core.ObservationWrapper):
         """
 
         lidar_signals = self.get_lidarSignal()
-        observation = lidar_signals + [self.inventory_items_quantity[item] for item in sorted(self.inventory_items_quantity)
+        obs = lidar_signals + [self.inventory_items_quantity[item] for item in sorted(self.inventory_items_quantity)
                                        if item not in self.unbreakable_items]
         
-        return np.array(observation)
+        return np.array(obs)
 
 
 class AgentMap(gym.core.ObservationWrapper):
@@ -121,9 +121,9 @@ class AgentMap(gym.core.ObservationWrapper):
 
     def observation(self, obs):
 
-        observation = {'agent_map': self.get_agentView(),
-                       'agent_facing_id': self.env.agent_facing_id,
-                       'inventory_items_quantity': self.env.inventory_items_quantity
-                       }
+        obs = {'agent_map': self.get_agentView(),
+               'agent_facing_id': self.env.agent_facing_id,
+               'inventory_items_quantity': self.env.inventory_items_quantity
+               }
 
-        return observation
+        return obs

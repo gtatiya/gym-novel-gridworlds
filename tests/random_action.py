@@ -4,6 +4,7 @@ import time
 import gym
 import gym_novel_gridworlds
 from gym_novel_gridworlds.novelty_wrappers import inject_novelty
+from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
 from gym_novel_gridworlds.wrappers import SaveTrajectories, LimitActions
 
 import numpy as np
@@ -20,13 +21,13 @@ env = gym.make(env_id)
 env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
 
 # observation_wrappers
-# env = LidarInFront(env, num_beams=8)
+env = LidarInFront(env, num_beams=8)
 # env = AgentMap(env)
 
 # novelty_wrappers
 # novelty_name:
 # addchop, additem, axe, axetobreak, breakincrease, extractincdec, fence, firewall, remapaction, replaceitem
-novelty_name = 'remapaction'
+novelty_name = 'breakincrease'
 # novelty_arg1:
 # additem - any item name (e.g. arrow, spring) | axe & axetobreak - iron, wooden |
 # breakincrease - optional: any existing item (e.g. tree_log) | extractincdec - increase or decrease |
@@ -52,10 +53,10 @@ for i in range(50):
     action_id = env.action_space.sample()  # take a random action
     print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
     # print("agent_location: ", env.agent_location)
-    observation, reward, done, info = env.step(action_id)
+    obs, reward, done, info = env.step(action_id)
     env.render()
     print("Step: " + str(i) + ", reward: ", reward)
-    print("observation: ", observation)
+    print("observation: ", obs)
     time.sleep(0)
 
     if (i+1) % 10 == 0:

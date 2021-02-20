@@ -102,13 +102,13 @@ if __name__ == "__main__":
     env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
 
     # observation_wrappers
-    # env = LidarInFront(env, num_beams=8)
+    env = LidarInFront(env, num_beams=8)
     # env = AgentMap(env)
 
     # novelty_wrappers
     # novelty_name:
     # addchop, additem, addjump, axe, axetobreak, breakincrease, extractincdec, fence, firewall, remapaction, replaceitem
-    novelty_name = 'remapaction'
+    novelty_name = 'breakincrease'
     # novelty_arg1:
     # additem - any item name (e.g. arrow, spring) | axe & axetobreak - iron, wooden |
     # breakincrease - optional: any existing item (e.g. tree_log) | extractincdec - increase or decrease |
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     novelty_arg2 = ''
     # difficulty
     # Only used for: additem, axe, axetobreak, fence, firewall, remapaction, replaceitem
-    difficulty = 'medium'  # easy, medium, hard
+    difficulty = 'hard'  # easy, medium, hard
 
     if novelty_name:
         env = inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2)
@@ -128,9 +128,10 @@ if __name__ == "__main__":
     # env = ReplaceItem(env, 'easy', 'wall', 'brick')
 
     KEY_ACTION_DICT = assign_keys(env)
-    # print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
+    print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
     print("action_space:", env.action_space)
     print("actions_id:", len(env.actions_id), env.actions_id)
+    print("observation_space:", env.observation_space)
     print("items_id: ", len(env.items_id), env.items_id)
     print("inventory_items_quantity: ", len(env.inventory_items_quantity), env.inventory_items_quantity)
 
@@ -143,7 +144,10 @@ if __name__ == "__main__":
         action_id = get_action_from_keyboard(KEY_ACTION_DICT)  # take action from keyboard
         observation, reward, done, info = env.step(action_id)
 
-        print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
+        if hasattr(env, 'limited_actions_id'):
+            print("action: ", action_id, list(env.limited_actions_id.keys())[list(env.limited_actions_id.values()).index(action_id)])
+        else:
+            print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
         print("Step: " + str(i) + ", reward: ", reward)
         print("observation: ", len(observation), observation)
 

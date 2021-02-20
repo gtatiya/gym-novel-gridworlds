@@ -104,6 +104,8 @@ if __name__ == "__main__":
     env = gym.make(env_id)
     env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
     env = LidarInFront(env)
+    # env = inject_novelty(env, 'breakincrease', 'hard', '', '')
+
     env = Monitor(env, log_dir)
     # callback = RenderOnEachStep(env)
     callback = SaveOnBestTrainingRewardCallback(1000, log_dir, model_code + '_best_model')

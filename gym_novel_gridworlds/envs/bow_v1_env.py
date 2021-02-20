@@ -99,10 +99,10 @@ class BowV1Env(gym.Env):
             self.agent_facing_str = copy.deepcopy(self.env.agent_facing_str)
             self.agent_facing_id = copy.deepcopy(self.env.agent_facing_id)
 
-            observation = self.get_observation()
+            obs = self.get_observation()
             self.update_block_in_front()
 
-            return observation
+            return obs
 
         if map_size is not None:
             self.map_size = map_size
@@ -147,10 +147,10 @@ class BowV1Env(gym.Env):
             self.available_locations.append(self.agent_location)
 
         # Update after each reset
-        observation = self.get_observation()
+        obs = self.get_observation()
         self.update_block_in_front()
 
-        return observation
+        return obs
 
     def add_item_to_map(self, item, num_items):
 
@@ -207,13 +207,13 @@ class BowV1Env(gym.Env):
 
         assert not self.max_items < len(self.items), "Cannot have more than " + str(self.max_items) + " items"
 
-        observation = {'map': self.map,
-                       'agent_location': self.agent_location,
-                       'agent_facing_id': self.agent_facing_id,
-                       'inventory_items_quantity': self.inventory_items_quantity,
-                       }
+        obs = {'map': self.map,
+               'agent_location': self.agent_location,
+               'agent_facing_id': self.agent_facing_id,
+               'inventory_items_quantity': self.inventory_items_quantity
+               }
 
-        return observation
+        return obs
 
     def step(self, action_id):
         """
@@ -312,7 +312,7 @@ class BowV1Env(gym.Env):
 
         # Update after each step
         self.grab_entities()
-        observation = self.get_observation()
+        obs = self.get_observation()
         self.update_block_in_front()
 
         done = False
@@ -328,7 +328,7 @@ class BowV1Env(gym.Env):
         self.last_reward = reward
         self.last_done = done
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
     def update_block_in_front(self):
         r, c = self.agent_location

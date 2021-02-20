@@ -35,7 +35,7 @@ class AxeEasy(gym.core.Wrapper):
 
         old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
 
-        observation, reward, done, info = self.env.step(action_id)
+        obs, reward, done, info = self.env.step(action_id)
 
         if action_id == self.actions_id['Break']:
             if old_inventory_items_quantity != self.env.inventory_items_quantity:
@@ -45,7 +45,7 @@ class AxeEasy(gym.core.Wrapper):
                     info['step_cost'] = info['step_cost'] * 0.25  # 900.0
                 self.env.last_step_cost = info['step_cost']
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 class AxeMedium(gym.core.Wrapper):
@@ -68,7 +68,7 @@ class AxeMedium(gym.core.Wrapper):
 
         old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
 
-        observation, reward, done, info = self.env.step(action_id)
+        obs, reward, done, info = self.env.step(action_id)
 
         if action_id == self.actions_id['Break']:
             if old_inventory_items_quantity != self.env.inventory_items_quantity:
@@ -78,7 +78,7 @@ class AxeMedium(gym.core.Wrapper):
                     info['step_cost'] = info['step_cost'] * 0.25  # 900.0
                 self.env.last_step_cost = info['step_cost']
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 class AxeHard(gym.core.Wrapper):
@@ -126,12 +126,12 @@ class AxeHard(gym.core.Wrapper):
 
         old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
 
-        observation, reward, done, info = self.env.step(action_id)
+        obs, reward, done, info = self.env.step(action_id)
 
         # Craft___axe
         if action_id == len(self.env.actions_id) - 2:
             reward, result, step_cost, message = self.craft(self.axe_name)
-            observation = self.env.get_observation()
+            obs = self.env.get_observation()
             info = {'result': result, 'step_cost': step_cost, 'message': message}
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
@@ -144,7 +144,7 @@ class AxeHard(gym.core.Wrapper):
                     info['step_cost'] = info['step_cost'] * 0.25  # 900.0
                 self.env.last_step_cost = info['step_cost']
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
     def craft(self, item_to_craft):
 
@@ -283,7 +283,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            observation = self.env.get_observation()
+            obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -299,9 +299,9 @@ class AxetoBreakEasy(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action_id)
+            obs, reward, done, info = self.env.step(action_id)
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 class AxetoBreakMedium(gym.core.Wrapper):
@@ -365,7 +365,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            observation = self.env.get_observation()
+            obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -381,9 +381,9 @@ class AxetoBreakMedium(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action_id)
+            obs, reward, done, info = self.env.step(action_id)
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 class AxetoBreakHard(gym.core.Wrapper):
@@ -439,7 +439,7 @@ class AxetoBreakHard(gym.core.Wrapper):
         # Craft___axe
         if action_id == len(self.env.actions_id) - 2:
             reward, result, step_cost, message = self.craft(self.axe_name)
-            observation = self.env.get_observation()
+            obs = self.env.get_observation()
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
@@ -495,7 +495,7 @@ class AxetoBreakHard(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            observation = self.env.get_observation()
+            obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -511,9 +511,9 @@ class AxetoBreakHard(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action_id)
+            obs, reward, done, info = self.env.step(action_id)
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
     def craft(self, item_to_craft):
 
@@ -622,10 +622,10 @@ class Fence(gym.core.Wrapper):
             self.env.add_fence_around((r, c), self.fence_name)
 
         # Update after each reset
-        observation = self.get_observation()
+        obs = self.get_observation()
         self.update_block_in_front()
 
-        return observation
+        return obs
 
 
 class AddItem(gym.core.Wrapper):
@@ -668,10 +668,10 @@ class AddItem(gym.core.Wrapper):
                 self.env.map[r][c] = self.items_id[self.item_to_add]
 
         # Update after each reset
-        observation = self.get_observation()
+        obs = self.get_observation()
         self.update_block_in_front()
 
-        return observation
+        return obs
 
 
 class ReplaceItem(gym.core.Wrapper):
@@ -724,10 +724,10 @@ class ReplaceItem(gym.core.Wrapper):
                 self.env.map[r][c] = self.items_id[self.item_to_replace_with]
 
         # Update after each reset
-        observation = self.get_observation()
+        obs = self.get_observation()
         self.update_block_in_front()
 
-        return observation
+        return obs
 
 
 class FireWall(gym.core.Wrapper):
@@ -742,13 +742,13 @@ class FireWall(gym.core.Wrapper):
 
     def reset(self):
 
-        observation = self.env2.reset()
+        obs = self.env2.reset()
 
-        return observation
+        return obs
 
     def step(self, action_id):
 
-        observation, reward, done, info = self.env.step(action_id)
+        obs, reward, done, info = self.env.step(action_id)
 
         r, c = self.agent_location
         close_to_fire_wall = False
@@ -774,7 +774,7 @@ class FireWall(gym.core.Wrapper):
         self.env.last_reward = reward
         self.env.last_done = done
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 def remap_action_difficulty(env, difficulty='hard'):
@@ -824,7 +824,7 @@ class BlockItem(gym.core.Wrapper):
 
         old_rubber_quantity = copy.deepcopy(self.env.inventory_items_quantity['rubber'])
 
-        observation, reward, done, info = self.env.step(action_id)
+        obs, reward, done, info = self.env.step(action_id)
 
         # Extract_rubber
         if action_id == self.actions_id['Extract_rubber']:
@@ -838,7 +838,7 @@ class BlockItem(gym.core.Wrapper):
                     r, c = result[0][i], result[1][i]
                     self.env.add_fence_around((r, c))
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 class AddChopAction(gym.core.Wrapper):
@@ -882,7 +882,7 @@ class AddChopAction(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            observation = self.env.get_observation()
+            obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -898,9 +898,9 @@ class AddChopAction(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action_id)
+            obs, reward, done, info = self.env.step(action_id)
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 class AddJumpAction(gym.core.Wrapper):
@@ -943,7 +943,7 @@ class AddJumpAction(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            observation = self.env.get_observation()
+            obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -959,9 +959,9 @@ class AddJumpAction(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action_id)
+            obs, reward, done, info = self.env.step(action_id)
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 class BreakIncrease(gym.core.Wrapper):
@@ -977,7 +977,13 @@ class BreakIncrease(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        if action_id == self.actions_id['Break']:
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Break' in self.limited_actions_id, "Cannot use breakincrease novelty because you have it in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
+
+        if action_id == actions_id['Break']:
             self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
@@ -1007,7 +1013,11 @@ class BreakIncrease(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            observation = self.env.get_observation()
+
+            if hasattr(self, 'observation'):
+                obs = self.observation(None)
+            else:
+                obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -1023,9 +1033,9 @@ class BreakIncrease(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action_id)
+            obs, reward, done, info = self.env.step(action_id)
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 class ExtractIncDec(gym.core.Wrapper):
@@ -1081,7 +1091,7 @@ class ExtractIncDec(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            observation = self.env.get_observation()
+            obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -1097,9 +1107,9 @@ class ExtractIncDec(gym.core.Wrapper):
             self.env.last_reward = reward
             self.env.last_done = done
         else:
-            observation, reward, done, info = self.env.step(action_id)
+            obs, reward, done, info = self.env.step(action_id)
 
-        return observation, reward, done, info
+        return obs, reward, done, info
 
 
 #################### Novelty Helper ####################
