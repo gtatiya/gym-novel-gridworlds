@@ -706,7 +706,10 @@ class ReplaceItem(gym.core.Wrapper):
                 self.env.map[r][c] = self.items_id[self.item_to_replace_with]
 
         # Update after each reset
-        obs = self.get_observation()
+        if hasattr(self, 'observation'):
+            obs = self.observation(None)
+        else:
+            obs = self.env.get_observation()
         self.update_block_in_front()
 
         return obs
