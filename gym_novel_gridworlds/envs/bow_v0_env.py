@@ -391,7 +391,7 @@ class BowV0Env(gym.Env):
             else:
                 have_all_ingredients[item] = False
 
-        # If there is not enough ingredients in the inventory
+        # If there are not enough ingredients in the inventory
         if False in have_all_ingredients.values():
             result = False
             message = "Missing items: "
