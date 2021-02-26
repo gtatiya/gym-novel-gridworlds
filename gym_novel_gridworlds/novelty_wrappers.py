@@ -10,9 +10,10 @@ class AxeEasy(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the inventory
     Using axe reduces the step_cost when Break action is used
+    With optional arg breakincrease, the agent will get 2 items in inventory after break action instead of 1
     """
 
-    def __init__(self, env, axe_material):
+    def __init__(self, env, axe_material, breakincrease='false'):
         super().__init__(env)
 
         self.axe_name = axe_material + '_axe'  # wooden_axe, iron_axe
@@ -22,6 +23,8 @@ class AxeEasy(gym.core.Wrapper):
         self.env.entities.add(self.axe_name)
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
+
+        self.breakincrease = breakincrease
 
     def reset(self):
 
@@ -33,17 +36,75 @@ class AxeEasy(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Break' in self.limited_actions_id, "Cannot use breakincrease novelty_arg2 because you do not have Break in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
 
-        obs, reward, done, info = self.env.step(action_id)
+        if action_id == actions_id['Break']:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
-        if action_id == self.actions_id['Break']:
-            if old_inventory_items_quantity != self.env.inventory_items_quantity:
+            reward = -1  # default reward
+            result = True
+            step_cost = 3600.0
+            message = ''
+
+            self.env.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if self.env.block_in_front_str not in self.env.unbreakable_items:
                 if self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'wooden_axe':
-                    info['step_cost'] = info['step_cost'] * 0.5  # 1800.0
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    if self.breakincrease == 'true':
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 2
+                    else:
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                    reward = self.reward_intermediate
+
+                    step_cost = step_cost * 0.5  # 1800.0
                 elif self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'iron_axe':
-                    info['step_cost'] = info['step_cost'] * 0.25  # 900.0
-                self.env.last_step_cost = info['step_cost']
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    if self.breakincrease == 'true':
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 2
+                    else:
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                    reward = self.reward_intermediate
+
+                    step_cost = step_cost * 0.25  # 900.0
+                else:
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+            else:
+                result = False
+                message = "Cannot break " + self.env.block_in_front_str
+
+            # Update after each step
+            self.env.grab_entities()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = self.reward_done
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            obs, reward, done, info = self.env.step(action_id)
 
         return obs, reward, done, info
 
@@ -53,9 +114,10 @@ class AxeMedium(gym.core.Wrapper):
     Novelty wrapper to add a new item (axe) in the map
     When the agent goes near axe, axe gets into the inventory
     Using axe reduces the step_cost when Break action is used
+    With optional arg breakincrease, the agent will get 2 items in inventory after break action instead of 1
     """
 
-    def __init__(self, env, axe_material):
+    def __init__(self, env, axe_material, breakincrease='false'):
         super().__init__(env)
 
         self.axe_name = axe_material + '_axe'  # wooden_axe, iron_axe
@@ -64,19 +126,79 @@ class AxeMedium(gym.core.Wrapper):
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
 
+        self.breakincrease = breakincrease
+
     def step(self, action_id):
 
-        old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Break' in self.limited_actions_id, "Cannot use breakincrease novelty_arg2 because you do not have Break in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
 
-        obs, reward, done, info = self.env.step(action_id)
+        if action_id == actions_id['Break']:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
-        if action_id == self.actions_id['Break']:
-            if old_inventory_items_quantity != self.env.inventory_items_quantity:
+            reward = -1  # default reward
+            result = True
+            step_cost = 3600.0
+            message = ''
+
+            self.env.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if self.env.block_in_front_str not in self.env.unbreakable_items:
                 if self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'wooden_axe':
-                    info['step_cost'] = info['step_cost'] * 0.5  # 1800.0
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    if self.breakincrease == 'true':
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 2
+                    else:
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                    reward = self.reward_intermediate
+
+                    step_cost = step_cost * 0.5  # 1800.0
                 elif self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'iron_axe':
-                    info['step_cost'] = info['step_cost'] * 0.25  # 900.0
-                self.env.last_step_cost = info['step_cost']
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    if self.breakincrease == 'true':
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 2
+                    else:
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                    reward = self.reward_intermediate
+
+                    step_cost = step_cost * 0.25  # 900.0
+                else:
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+            else:
+                result = False
+                message = "Cannot break " + self.env.block_in_front_str
+
+            # Update after each step
+            self.env.grab_entities()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = self.reward_done
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            obs, reward, done, info = self.env.step(action_id)
 
         return obs, reward, done, info
 
@@ -87,9 +209,10 @@ class AxeHard(gym.core.Wrapper):
     The ingredients of axe are placed in the map
     When the agent crafts axe, it goes in the inventory
     Using axe reduces the step_cost to when Break action is used
+    With optional arg breakincrease, the agent will get 2 items in inventory after break action instead of 1
     """
 
-    def __init__(self, env, axe_material):
+    def __init__(self, env, axe_material, breakincrease='false'):
         super().__init__(env)
 
         self.axe_material = axe_material
@@ -116,33 +239,111 @@ class AxeHard(gym.core.Wrapper):
                 self.env.add_new_items({item: axe_recipe[item]})
         self.env.recipes.update({self.axe_name: {'input': axe_recipe, 'output': {self.axe_name: 1}}})
 
-        # self.action_craft_str.update({len(self.action_str): 'Craft_' + self.axe_name})
+        self.env.craft_actions_id.update({'Craft_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update({'Craft_' + self.axe_name: len(self.env.actions_id)})
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
         self.env.action_space = spaces.Discrete(len(self.env.actions_id))
 
+        self.breakincrease = breakincrease
+
     def step(self, action_id):
 
-        old_inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Craft_' + self.axe_name in self.limited_actions_id, "Cannot use AxeHard novelty because you do not have " + "Craft_" + self.axe_name + " in LimitActions"
+            assert 'Break' in self.limited_actions_id, "Cannot use breakincrease novelty_arg2 because you do not have Break in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
 
-        obs, reward, done, info = self.env.step(action_id)
+        if action_id == actions_id['Craft_' + self.axe_name]:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
-        # Craft___axe
-        if action_id == len(self.env.actions_id) - 2:
             reward, result, step_cost, message = self.craft(self.axe_name)
-            obs = self.env.get_observation()
+
+            # Update after each step
+            self.env.grab_entities()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = self.reward_done
+                done = True
+
             info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
-        # Break
-        elif action_id == self.actions_id['Break']:
-            if old_inventory_items_quantity != self.env.inventory_items_quantity:
+            self.env.last_done = done
+        elif action_id == actions_id['Break']:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
+
+            reward = -1  # default reward
+            result = True
+            step_cost = 3600.0
+            message = ''
+
+            self.env.update_block_in_front()
+            # If block in front is not air and wall, place the block in front in inventory
+            if self.env.block_in_front_str not in self.env.unbreakable_items:
                 if self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'wooden_axe':
-                    info['step_cost'] = info['step_cost'] * 0.5  # 1800.0
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    if self.breakincrease == 'true':
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 2
+                    else:
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                    reward = self.reward_intermediate
+
+                    step_cost = step_cost * 0.5  # 1800.0
                 elif self.env.inventory_items_quantity[self.axe_name] >= 1 and self.env.selected_item == 'iron_axe':
-                    info['step_cost'] = info['step_cost'] * 0.25  # 900.0
-                self.env.last_step_cost = info['step_cost']
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    if self.breakincrease == 'true':
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 2
+                    else:
+                        self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+
+                    reward = self.reward_intermediate
+
+                    step_cost = step_cost * 0.25  # 900.0
+                else:
+                    block_r, block_c = self.env.block_in_front_location
+                    self.env.map[block_r][block_c] = 0
+                    self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+            else:
+                result = False
+                message = "Cannot break " + self.env.block_in_front_str
+
+            # Update after each step
+            self.env.grab_entities()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = self.reward_done
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+        else:
+            obs, reward, done, info = self.env.step(action_id)
 
         return obs, reward, done, info
 
@@ -707,7 +908,7 @@ class ReplaceItem(gym.core.Wrapper):
 
         # Update after each reset
         if hasattr(self, 'observation'):
-            obs = self.observation(None)
+            obs = self.observation()
         else:
             obs = self.env.get_observation()
         self.update_block_in_front()
@@ -961,13 +1162,13 @@ class BreakIncrease(gym.core.Wrapper):
     def step(self, action_id):
 
         if hasattr(self, 'limited_actions_id'):
-            assert 'Break' in self.limited_actions_id, "Cannot use breakincrease novelty because you have it in LimitActions"
+            assert 'Break' in self.limited_actions_id, "Cannot use breakincrease novelty because you do not have Break in LimitActions"
             actions_id = self.limited_actions_id
         else:
             actions_id = self.actions_id
 
         if action_id == actions_id['Break']:
-            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
             result = True
@@ -996,7 +1197,7 @@ class BreakIncrease(gym.core.Wrapper):
             self.env.grab_entities()
 
             if hasattr(self, 'observation'):
-                obs = self.observation(None)
+                obs = self.observation()
             else:
                 obs = self.env.get_observation()
             self.env.update_block_in_front()
@@ -1115,12 +1316,22 @@ def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelt
         assert novelty_arg1 in ['wooden', 'iron'], \
             "For axe novelty, novelty_arg1 (attribute of axe, e.g. wooden, iron) is needed"
 
-        if difficulty == 'easy':
-            env = AxeEasy(env, novelty_arg1)
-        elif difficulty == 'medium':
-            env = AxeMedium(env, novelty_arg1)
-        elif difficulty == 'hard':
-            env = AxeHard(env, novelty_arg1)
+        if novelty_arg2:
+            assert novelty_arg2 in ['true', 'false'], "For axe novelty, novelty_arg2 (breakincrease) must be 'true' or 'false'"
+
+            if difficulty == 'easy':
+                env = AxeEasy(env, novelty_arg1, novelty_arg2)
+            elif difficulty == 'medium':
+                env = AxeMedium(env, novelty_arg1, novelty_arg2)
+            elif difficulty == 'hard':
+                env = AxeHard(env, novelty_arg1, novelty_arg2)
+        else:
+            if difficulty == 'easy':
+                env = AxeEasy(env, novelty_arg1)
+            elif difficulty == 'medium':
+                env = AxeMedium(env, novelty_arg1)
+            elif difficulty == 'hard':
+                env = AxeHard(env, novelty_arg1)
     elif novelty_name == 'axetobreak':
         assert novelty_arg1 in ['wooden', 'iron'], \
             "For axe novelty, novelty_arg1 (attribute of axe, e.g. wooden, iron) is needed"

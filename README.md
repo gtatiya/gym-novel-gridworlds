@@ -28,16 +28,16 @@ pip install gym-novel-gridworlds
 
 ## Development Environment
 
-`Python 3.7.4` and following packages were used for development:<br><br>
+`Python 3.7.9` and following packages were used for development:<br><br>
 
 ### Python Packages
 ```
-pip install gym==0.17.2
-pip install keyboard==0.13.4
-pip install matplotlib==3.1.2
-pip install numpy==1.16.5
-pip install stable_baselines=2.10.0
-pip install tensorflow-gpu==1.14.0
+pip install gym==0.18.0
+pip install keyboard==0.13.5
+pip install matplotlib==3.3.3
+pip install numpy==1.19.4
+pip install stable-baselines==2.10.1
+pip install tensorflow-gpu==1.15.0
 ```
 
 ## Running

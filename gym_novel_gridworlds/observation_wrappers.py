@@ -67,7 +67,7 @@ class LidarInFront(gym.core.ObservationWrapper):
 
         return lidar_signals
 
-    def observation(self, obs):
+    def observation(self, obs=None):
         """
         observation is lidarSignal + inventory_items_quantity
         :return: observation

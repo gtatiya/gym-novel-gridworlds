@@ -101,10 +101,10 @@ if __name__ == "__main__":
 
     # wrappers
     # env = SaveTrajectories(env, save_path="saved_trajectories")
-    env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
+    # env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow', 'Craft_iron_axe', 'Select_iron_axe'})
 
     # observation_wrappers
-    env = LidarInFront(env, num_beams=8)
+    # env = LidarInFront(env, num_beams=8)
     # env = AgentMap(env)
 
     # novelty_wrappers
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # fence - oak, jungle | replaceitem - any existing item (e.g. wall) |
     novelty_arg1 = ''
     # novelty_arg2:
-    # replaceitem - any item name (e.g. brick)
+    # axe - optional: true, false (default) | replaceitem - any item name (e.g. brick)
     novelty_arg2 = ''
     # difficulty
     # Only used for: additem, axe, axetobreak, fence, firewall, remapaction, replaceitem
