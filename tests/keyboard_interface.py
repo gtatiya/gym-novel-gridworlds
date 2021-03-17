@@ -19,7 +19,11 @@ def assign_keys(env_):
     if hasattr(env_, 'limited_actions_id'):
         actions_id = env_.limited_actions_id
     else:
-        actions_id = env_.actions_id
+        if hasattr(env_, 'actions_id'):
+            actions_id = env_.actions_id
+        else:
+            key_action_id_dict = env_key[env_id]
+            return key_action_id_dict
 
     actions_key = {'Forward': 'w', 'Left': 'a', 'Right': 'd', 'Break': 'e', 'Chop': 'q', 'Jump': 'space',
                    'Place_tree_tap': 'z', 'Extract_rubber': 'x', 'Extract_string': 'x'}
@@ -59,12 +63,17 @@ def assign_keys(env_):
 
 def print_play_keys(env_, key_action_dict):
 
+    print("Press a key to play: ")
     if hasattr(env_, 'limited_actions_id'):
         actions_id = env_.limited_actions_id
     else:
-        actions_id = env_.actions_id
+        if hasattr(env_, 'actions_id'):
+            actions_id = env_.actions_id
+        else:
+            for key, key_id in key_action_dict.items():
+                print(key, ": ", env_.action_str[key_id])
+            return
 
-    print("Press a key to play: ")
     for key, action_id in key_action_dict.items():
         print(key, ": ", list(actions_id.keys())[list(actions_id.values()).index(action_id)])
 
@@ -92,7 +101,7 @@ def fix_item_location(item, location):
 
 
 if __name__ == "__main__":
-    env_id = 'NovelGridworld-Bow-v0'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
+    env_id = 'NovelGridworld-Pogostick-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
     env = gym.make(env_id)
 
     # env.map_size = 12  # np.random.randint(low=10, high=20, size=1)[0]
@@ -132,7 +141,10 @@ if __name__ == "__main__":
     KEY_ACTION_DICT = assign_keys(env)
     print("KEY_ACTION_DICT: ", KEY_ACTION_DICT)
     print("action_space:", env.action_space)
-    print("actions_id:", len(env.actions_id), env.actions_id)
+    if hasattr(env, 'actions_id'):
+        print("actions_id:", len(env.actions_id), env.actions_id)
+    else:
+        print("actions_id:", len(env.action_str), env.action_str)
     print("observation_space:", env.observation_space)
     print("items_id: ", len(env.items_id), env.items_id)
     print("inventory_items_quantity: ", len(env.inventory_items_quantity), env.inventory_items_quantity)
@@ -149,7 +161,10 @@ if __name__ == "__main__":
         if hasattr(env, 'limited_actions_id'):
             print("action: ", action_id, list(env.limited_actions_id.keys())[list(env.limited_actions_id.values()).index(action_id)])
         else:
-            print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
+            if hasattr(env, 'actions_id'):
+                print("action: ", action_id, list(env.actions_id.keys())[list(env.actions_id.values()).index(action_id)])
+            else:
+                print("action: ", action_id, env.action_str[action_id])
         print("Step: " + str(i) + ", reward: ", reward)
         print("observation: ", len(observation), observation)
 

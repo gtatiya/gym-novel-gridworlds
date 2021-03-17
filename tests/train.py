@@ -102,8 +102,8 @@ if __name__ == "__main__":
     os.makedirs(log_dir, exist_ok=True)
 
     env = gym.make(env_id)
-    env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
-    env = LidarInFront(env)
+    # env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
+    # env = LidarInFront(env)
     # env = inject_novelty(env, 'breakincrease', 'hard', '', '')
 
     env = Monitor(env, log_dir)

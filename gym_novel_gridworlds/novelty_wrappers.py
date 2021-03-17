@@ -1353,10 +1353,15 @@ def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelt
         assert novelty_arg1 in ['increase', 'decrease'], \
             "For extractincdec novelty, novelty_arg1 ('increase', 'decrease') is needed"
 
-        assert env.env_id != 'NovelGridworld-Bow-v0', "There is nothing to extract in 'NovelGridworld-Bow-v0'"
+        assert env.env_id != 'NovelGridworld-Bow-v0', "There is nothing to extract in NovelGridworld-Bow-v0"
 
-        if env.env_id.startswith('NovelGridworld-Pogostick'):
-            assert novelty_arg1 == 'increase', "Cannot decrease rubbet extraction"
+        if env.env_id == 'NovelGridworld-Bow-v1':
+            assert novelty_arg1 == 'decrease', "In NovelGridworld-Bow-v1, increasing string extraction will not benefit " \
+                                               "as only 3 string are needed"
+
+        assert not env.env_id.startswith('NovelGridworld-Pogostick'), "In NovelGridworld-Pogostick, you should not use " \
+            "extractincdec novelty because rubber extraction cannot be decreased, and increasing rubber extraction will" \
+            " not benefit as only 1 rubber is needed"
 
         env = ExtractIncDec(env, novelty_arg1)
     elif novelty_name == 'fence':
