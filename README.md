@@ -74,23 +74,23 @@ Feel free to use [Observation Wrappers](https://github.com/gtatiya/gym-novel-gri
 
 <tr>
 <td>
-<center>NovelGridworld-Bow-v0</center>
-<center><img src="pics/NovelGridworld-Bow-v0.gif" alt="drawing" width="800" height="250"/></center>
+<b>NovelGridworld-Bow-v0</b>
+<img src="pics/NovelGridworld-Bow-v0.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
-<center>NovelGridworld-Bow-v1</center>
-<center><img src="pics/NovelGridworld-Bow-v1.gif" alt="drawing" width="800" height="250"/></center>
+<b>NovelGridworld-Bow-v1</b>
+<img src="pics/NovelGridworld-Bow-v1.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 
 <tr>
 <td>
-<center>NovelGridworld-Pogostick-v0</center>
-<center><img src="pics/NovelGridworld-Pogostick-v0.gif" alt="drawing" width="800" height="250"/></center>
+<b>NovelGridworld-Pogostick-v0</b>
+<img src="pics/NovelGridworld-Pogostick-v0.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
-<center>NovelGridworld-Pogostick-v1</center>
-<center><img src="pics/NovelGridworld-Pogostick-v1.gif" alt="drawing" width="800" height="250"/></center>
+<b>NovelGridworld-Pogostick-v1</b>
+<img src="pics/NovelGridworld-Pogostick-v1.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 
@@ -194,63 +194,63 @@ env = inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2)
 
 <tr>
 <td>
-<center>addchop</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_addchop.gif" alt="drawing" width="800" height="250"/></center>
+<b>addchop</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_addchop.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
-<center>additem</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_additem.gif" alt="drawing" width="800" height="250"/></center>
-</td>
-</tr>
-
-<tr>
-<td>
-<center>addjump</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_addjump.gif" alt="drawing" width="800" height="250"/></center>
-</td>
-<td>
-<center>axe</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_axe.gif" alt="drawing" width="800" height="250"/></center>
+<b>additem</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_additem.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 
 <tr>
 <td>
-<center>axetobreak</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_axetobreak.gif" alt="drawing" width="800" height="250"/></center>
+<b>addjump</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_addjump.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
-<center>breakincrease</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_breakincrease.gif" alt="drawing" width="800" height="250"/></center>
-</td>
-</tr>
-
-<tr>
-<td>
-<center>extractincdec</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Bow-v1_extractincdec.gif" alt="drawing" width="800" height="250"/></center>
-</td>
-<td>
-<center>fence</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_fence.gif" alt="drawing" width="800" height="250"/></center>
+<b>axe</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_axe.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 
 <tr>
 <td>
-<center>firewall</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_firewall.gif" alt="drawing" width="800" height="250"/></center>
+<b>axetobreak</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_axetobreak.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
-<center>remapaction</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_remapaction.gif" alt="drawing" width="800" height="250"/></center>
+<b>breakincrease</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_breakincrease.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 
 <tr>
 <td>
-<center>replaceitem</center>
-<center><img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_replaceitem.gif" alt="drawing" width="800" height="250"/></center>
+<b>extractincdec</b>
+<img src="pics/novelties_demo/NovelGridworld-Bow-v1_extractincdec.gif" alt="drawing" width="800" height="250"/>
+</td>
+<td>
+<b>fence</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_fence.gif" alt="drawing" width="800" height="250"/>
+</td>
+</tr>
+
+<tr>
+<td>
+<b>firewall</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_firewall.gif" alt="drawing" width="800" height="250"/>
+</td>
+<td>
+<b>remapaction</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_remapaction.gif" alt="drawing" width="800" height="250"/>
+</td>
+</tr>
+
+<tr>
+<td>
+<b>replaceitem</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_replaceitem.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
 </td>
