@@ -103,6 +103,11 @@ class AxeEasy(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -197,6 +202,11 @@ class AxeMedium(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -250,7 +260,8 @@ class AxeHard(gym.core.Wrapper):
     def step(self, action_id):
 
         if hasattr(self, 'limited_actions_id'):
-            assert 'Craft_' + self.axe_name in self.limited_actions_id, "Cannot use AxeHard novelty because you do not have " + "Craft_" + self.axe_name + " in LimitActions"
+            assert 'Craft_' + self.axe_name in self.limited_actions_id,\
+                "Cannot use AxeHard novelty because you do not have " + "Craft_" + self.axe_name + " in LimitActions"
             assert 'Break' in self.limited_actions_id, "Cannot use breakincrease novelty_arg2 because you do not have Break in LimitActions"
             actions_id = self.limited_actions_id
         else:
@@ -281,6 +292,11 @@ class AxeHard(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         elif action_id == actions_id['Break']:
             self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
@@ -342,6 +358,11 @@ class AxeHard(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -442,8 +463,14 @@ class AxetoBreakEasy(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        if action_id == self.actions_id['Break']:
-            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Break' in self.limited_actions_id, "Cannot use axetobreak novelty because you do not have Break in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
+
+        if action_id == actions_id['Break']:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
             result = True
@@ -478,7 +505,10 @@ class AxetoBreakEasy(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            obs = self.env.get_observation()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -493,6 +523,11 @@ class AxetoBreakEasy(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -518,8 +553,14 @@ class AxetoBreakMedium(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        if action_id == self.actions_id['Break']:
-            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Break' in self.limited_actions_id, "Cannot use axetobreak novelty because you do not have Break in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
+
+        if action_id == actions_id['Break']:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
             result = True
@@ -554,7 +595,10 @@ class AxetoBreakMedium(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            obs = self.env.get_observation()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -569,6 +613,11 @@ class AxetoBreakMedium(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -625,10 +674,26 @@ class AxetoBreakHard(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        # Craft___axe
-        if action_id == len(self.env.actions_id) - 2:
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Craft_' + self.axe_name in self.limited_actions_id,\
+                "Cannot use AxetoBreakHard novelty because you do not have " + "Craft_" + self.axe_name + " in LimitActions"
+            assert 'Break' in self.limited_actions_id, "Cannot use axetobreak novelty because you do not have Break in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
+
+        if action_id == actions_id['Craft_' + self.axe_name]:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
+
             reward, result, step_cost, message = self.craft(self.axe_name)
-            obs = self.env.get_observation()
+
+            # Update after each step
+            self.env.grab_entities()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
+            self.env.update_block_in_front()
 
             done = False
             if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
@@ -642,8 +707,13 @@ class AxetoBreakHard(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
-        elif action_id == self.actions_id['Break']:
-            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
+        elif action_id == actions_id['Break']:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
             result = True
@@ -678,7 +748,10 @@ class AxetoBreakHard(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            obs = self.env.get_observation()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -693,6 +766,11 @@ class AxetoBreakHard(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -811,6 +889,105 @@ class Fence(gym.core.Wrapper):
         return obs
 
 
+class FenceRestriction(gym.core.Wrapper):
+    """
+    Novelty wrapper to restrict breaking an item around fence until fence(s) are broken.
+    All fences are always breakable.
+    """
+
+    def __init__(self, env, difficulty, fence_material):
+        super().__init__(env)
+
+        self.difficulty = difficulty
+        self.env2 = Fence(env, 'medium', fence_material=fence_material)
+
+    def reset(self):
+
+        obs = self.env2.reset()
+
+        return obs
+
+    def step(self, action_id):
+
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Break' in self.limited_actions_id, "Cannot use fencerestriction novelty because you do not have Break in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
+
+        if action_id == actions_id['Break'] and self.difficulty != 'easy':
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
+
+            reward = -1  # default reward
+            result = True
+            step_cost = 3600.0
+            message = ''
+
+            self.env.update_block_in_front()
+            if self.env.block_in_front_str not in self.env.unbreakable_items:
+                if self.env.block_in_front_str == self.env2.fence_name:
+                    # Fence is always breakable
+                    obs, reward, done, info = self.env.step(action_id)
+                else:
+                    fence_restriction = False
+                    if self.difficulty == 'medium':
+                        # In medium, one side of the item to break must not have fence and agent must be on that side
+                        r, c = self.agent_location
+                        if self.agent_facing_str == 'NORTH' or self.agent_facing_str == 'SOUTH':
+                            if self.map[r][c - 1] == self.items_id[self.env2.fence_name] or self.map[r][c + 1] == self.items_id[self.env2.fence_name]:
+                                fence_restriction = True
+                        elif self.agent_facing_str == 'WEST' or self.agent_facing_str == 'EAST':
+                            if self.map[r - 1][c] == self.items_id[self.env2.fence_name] or self.map[r + 1][c] == self.items_id[self.env2.fence_name]:
+                                fence_restriction = True
+                    else:
+                        # In hard, all the sides of the item to break must not have fence
+                        r, c = self.block_in_front_location
+                        for r_item in [r - 1, r, r + 1]:
+                            for c_item in [c - 1, c, c + 1]:
+                                if self.map[r_item][c_item] == self.items_id[self.env2.fence_name]:
+                                    fence_restriction = True
+                                    break
+
+                    if not fence_restriction:
+                        obs, reward, done, info = self.env.step(action_id)
+                    else:
+                        result = False
+                        message = "Cannot break due to fence restriction"
+            else:
+                result = False
+                message = "Cannot break " + self.env.block_in_front_str
+
+            # Update after each step
+            self.env.grab_entities()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = self.reward_done
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
+        else:
+            obs, reward, done, info = self.env.step(action_id)
+
+        return obs, reward, done, info
+
+
 class AddItem(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item in the map
@@ -907,10 +1084,7 @@ class ReplaceItem(gym.core.Wrapper):
                 self.env.map[r][c] = self.items_id[self.item_to_replace_with]
 
         # Update after each reset
-        if hasattr(self, 'observation'):
-            obs = self.observation()
-        else:
-            obs = self.env.get_observation()
+        obs = self.env.get_observation()
         self.update_block_in_front()
 
         return obs
@@ -960,6 +1134,11 @@ class FireWall(gym.core.Wrapper):
         self.env.last_reward = reward
         self.env.last_done = done
 
+        lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                 'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                 'last_done': self.env.last_done}
+        self.set_lasts(lasts)
+
         return obs, reward, done, info
 
 
@@ -970,7 +1149,7 @@ def remap_action_difficulty(env, difficulty='hard'):
     """
 
     if hasattr(env, 'limited_actions_id'):
-        env.limited_actions_id = env.remap_action(env.limited_actions_id, 0)
+        env.set_limited_actions_id(env.remap_action(env.limited_actions_id, 0))
     else:
         if difficulty == 'easy':
             env.manipulation_actions_id = env.remap_action(env.manipulation_actions_id, 0)
@@ -1042,9 +1221,14 @@ class AddChopAction(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        if action_id == self.actions_id['Chop']:
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Chop' in self.limited_actions_id, "Cannot use addchop novelty because you do not have Chop in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
 
-            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+        if action_id == actions_id['Chop']:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
             reward = -1  # default reward
             result = True
@@ -1066,7 +1250,10 @@ class AddChopAction(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            obs = self.env.get_observation()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -1081,6 +1268,11 @@ class AddChopAction(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -1101,9 +1293,15 @@ class AddJumpAction(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        if action_id == self.actions_id['Jump']:
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Jump' in self.limited_actions_id, "Cannot use addjump novelty because you do not have Jump in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
 
-            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+        if action_id == actions_id['Jump']:
+            self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
+
             r, c = self.agent_location
 
             reward = -1  # default reward
@@ -1112,13 +1310,13 @@ class AddJumpAction(gym.core.Wrapper):
             message = ''
 
             if self.agent_facing_str == 'NORTH' and (0 <= (r - 2) <= self.map_size - 1) and self.map[r - 2][c] == 0:
-                self.env.agent_location = (r - 2, c)
+                self.set_agent_location(r - 2, c)
             elif self.agent_facing_str == 'SOUTH' and (0 <= (r + 2) <= self.map_size - 1) and self.map[r + 2][c] == 0:
-                self.env.agent_location = (r + 2, c)
+                self.set_agent_location(r + 2, c)
             elif self.agent_facing_str == 'WEST' and (0 <= (c - 2) <= self.map_size - 1) and self.map[r][c - 2] == 0:
-                self.env.agent_location = (r, c - 2)
+                self.set_agent_location(r, c - 2)
             elif self.agent_facing_str == 'EAST' and (0 <= (c + 2) <= self.map_size - 1) and self.map[r][c + 2] == 0:
-                self.env.agent_location = (r, c + 2)
+                self.set_agent_location(r, c + 2)
             else:
                 result = False
                 message = 'Block in path'
@@ -1127,7 +1325,10 @@ class AddJumpAction(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            obs = self.env.get_observation()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -1142,6 +1343,11 @@ class AddJumpAction(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -1195,7 +1401,6 @@ class BreakIncrease(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-
             if hasattr(self, 'observation'):
                 obs = self.observation()
             else:
@@ -1214,6 +1419,11 @@ class BreakIncrease(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -1233,7 +1443,18 @@ class ExtractIncDec(gym.core.Wrapper):
 
     def step(self, action_id):
 
-        self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+        if hasattr(self, 'limited_actions_id'):
+            has_extract = False
+            for action in self.limited_actions_id:
+                if action.startswith('Extract'):
+                    has_extract = True
+                    break
+            assert has_extract, "Cannot use extractincdec novelty because you do not have Extract action in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
+
+        self.env.last_action = list(actions_id.keys())[list(actions_id.values()).index(action_id)]
 
         if self.env.last_action.startswith('Extract'):
 
@@ -1273,7 +1494,10 @@ class ExtractIncDec(gym.core.Wrapper):
 
             # Update after each step
             self.env.grab_entities()
-            obs = self.env.get_observation()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
             self.env.update_block_in_front()
 
             done = False
@@ -1288,6 +1512,11 @@ class ExtractIncDec(gym.core.Wrapper):
             self.env.last_step_cost = step_cost
             self.env.last_reward = reward
             self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
         else:
             obs, reward, done, info = self.env.step(action_id)
 
@@ -1297,11 +1526,11 @@ class ExtractIncDec(gym.core.Wrapper):
 #################### Novelty Helper ####################
 
 def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelty_arg2=''):
-    assert novelty_name in ['addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease', 'extractincdec',
-                            'fence', 'firewall', 'remapaction', 'replaceitem'], \
-        "novelty_name must be one of 'addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease'," \
-        "'extractincdec', 'fence', 'firewall', 'remapaction', 'replaceitem'"
-    if novelty_name in ['additem', 'axe', 'axetobreak', 'fence', 'firewall', 'remapaction', 'replaceitem']:
+
+    novelty_names = ['addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease', 'extractincdec', 'fence',
+                     'fencerestriction', 'firewall', 'remapaction', 'replaceitem']
+    assert novelty_name in novelty_names, "novelty_name must be one of " + str(novelty_names)
+    if novelty_name in ['additem', 'axe', 'axetobreak', 'fence', 'fencerestriction', 'firewall', 'remapaction', 'replaceitem']:
         assert difficulty in ['easy', 'medium', 'hard'], "difficulty must be one of 'easy', 'medium', 'hard'"
 
     if novelty_name == 'addchop':
@@ -1368,6 +1597,10 @@ def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelt
         assert novelty_arg1, "For fence novelty, novelty_arg1 (attribute of fence, e.g. oak, jungle) is needed"
 
         env = Fence(env, difficulty, novelty_arg1)
+    elif novelty_name == 'fencerestriction':
+        assert novelty_arg1, "For fencerestriction novelty, novelty_arg1 (attribute of fence, e.g. oak, jungle) is needed"
+
+        env = FenceRestriction(env, difficulty, novelty_arg1)
     elif novelty_name == 'firewall':
         env = FireWall(env, difficulty)
     elif novelty_name == 'remapaction':

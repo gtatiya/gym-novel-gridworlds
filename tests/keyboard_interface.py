@@ -77,7 +77,7 @@ def print_play_keys(env_, key_action_dict):
     for key, action_id in key_action_dict.items():
         print(key, ": ", list(actions_id.keys())[list(actions_id.values()).index(action_id)])
 
-def get_action_from_keyboard(key_action_dict):
+def get_action_id_from_keyboard(key_action_dict):
     while True:
         key_pressed = keyboard.read_key()
         # return index of action if valid key is pressed
@@ -118,19 +118,20 @@ if __name__ == "__main__":
 
     # novelty_wrappers
     # novelty_name:
-    # addchop, additem, addjump, axe, axetobreak, breakincrease, extractincdec, fence, firewall, remapaction, replaceitem
+    # addchop, additem, addjump, axe, axetobreak, breakincrease, extractincdec, fence, fencerestriction, firewall
+    # remapaction, replaceitem
     novelty_name = ''
     # novelty_arg1:
     # additem - any item name (e.g. arrow, spring) | axe & axetobreak - iron, wooden |
     # breakincrease - optional: any existing item (e.g. tree_log) | extractincdec - increase or decrease |
-    # fence - oak, jungle | replaceitem - any existing item (e.g. wall) |
+    # fence & fencerestriction - oak, jungle | replaceitem - any existing item (e.g. wall) |
     novelty_arg1 = ''
     # novelty_arg2:
     # axe - optional: true, false (default) | replaceitem - any item name (e.g. brick)
     novelty_arg2 = ''
     # difficulty
-    # Only used for: additem, axe, axetobreak, fence, firewall, remapaction, replaceitem
-    difficulty = 'hard'  # easy, medium, hard
+    # Only used for: additem, axe, axetobreak, fence, fencerestriction, firewall, remapaction, replaceitem
+    difficulty = 'medium'  # easy, medium, hard
 
     if novelty_name:
         env = inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2)
@@ -153,9 +154,9 @@ if __name__ == "__main__":
 
     obs = env.reset()
     env.render()
-    for i in range(100):
+    for i in range(1000):
         print_play_keys(env, KEY_ACTION_DICT)
-        action_id = get_action_from_keyboard(KEY_ACTION_DICT)  # take action from keyboard
+        action_id = get_action_id_from_keyboard(KEY_ACTION_DICT)  # take action from keyboard
         observation, reward, done, info = env.step(action_id)
 
         if hasattr(env, 'limited_actions_id'):

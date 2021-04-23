@@ -187,6 +187,14 @@ class BowV0Env(gym.Env):
         self.agent_facing_str = direction_str
         self.agent_facing_id = self.direction_id[self.agent_facing_str]
 
+    def set_lasts(self, lasts):
+
+        self.last_action = lasts['last_action']
+        self.step_count = lasts['step_count']
+        self.last_step_cost = lasts['last_step_cost']
+        self.last_reward = lasts['last_reward']
+        self.last_done = lasts['last_done']
+
     def set_items_id(self, items):
 
         items_id = {}

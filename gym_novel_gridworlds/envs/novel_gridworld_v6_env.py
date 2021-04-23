@@ -21,6 +21,8 @@ class NovelGridworldV6Env(gym.Env):
     State: map, agent_location, agent_facing_id, inventory_items_quantity
     Action: {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4, 'Extract_rubber': 5,
             Craft action for each recipe, Select action for each item except unbreakable items}
+
+    Note that NovelGridworld-v6 is also deprecated env along with other NovelGridworld-vX envs.
     """
 
     def __init__(self, env=None):

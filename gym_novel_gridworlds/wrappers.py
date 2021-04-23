@@ -67,6 +67,10 @@ class LimitActions(gym.core.Wrapper):
         self.limited_actions_id = {action: i for i, action in enumerate(sorted(self.limited_actions))}
         self.action_space = spaces.Discrete(len(self.limited_actions_id))
 
+    def set_limited_actions_id(self, limited_actions_id):
+
+        self.limited_actions_id = limited_actions_id
+
     def step(self, action_id):
 
         assert action_id in self.limited_actions_id.values(), "Action ID " + str(action_id) + " is not valid, max" \

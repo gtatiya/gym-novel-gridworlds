@@ -181,7 +181,8 @@ env = inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2)
  <tr><td>axetobreak</td><td>An axe is introduced and axe required to break items. Using axe reduces the step_cost when Break action is used. There are 6 variants of this novelty: 3 difficulties x 2 attributes of axe.</td><td>An axe is in the inventory. The agent must select axe to use it.</td><td>An axe in the map. The agent must go near the axe to grab it.</td><td>A recipe to craft axe is given. The agent must craft the axe.</td><td>Attribute of axe (e.g. wooden, iron)</td><td>-</td></tr>
  <tr><td>breakincrease</td><td>The agent gets 2 items in the inventory when the agent breaks that item instead of 1.</td><td>-</td><td>-</td><td>-</td><td>Optional: any existing item (e.g. tree_log), Default: all items</td><td>-</td></tr>
  <tr><td>extractincdec</td><td>The agent gets more/less items in the inventory when the agent extracts it instead of the default quantity.</td><td>-</td><td>-</td><td>-</td><td>increase or decrease</td><td>-</td></tr>
- <tr><td>fence</td><td>Items in the map are blocked by fence. The agent must break the fence to reach the blocked items. There are 6 variants of this novelty: 3 difficulties x 2 attributes of axe.</td><td>20-50% items in the map are blocked by fence.</td><td>50-90% items in the map are blocked by fence.</td><td>90-100% items in the map are blocked by fence.</td><td>Attribute of fence (e.g. wooden, iron)</td><td>-</td></tr>
+ <tr><td>fence</td><td>Items in the map are blocked by fence. The agent must break the fence to reach the blocked items. There are 6 variants of this novelty: 3 difficulties x 2 attributes of fence.</td><td>20-50% items in the map are blocked by fence.</td><td>50-90% items in the map are blocked by fence.</td><td>90-100% items in the map are blocked by fence.</td><td>Attribute of fence (e.g. wooden, iron)</td><td>-</td></tr>
+ <tr><td>fencerestriction</td><td>Restrict breaking an item around fence until fence(s) are broken. All fences are always breakable. 50-90% items in the map are blocked by fence (fence medium novelty).</td><td>Breaking one fence next to the item, will enable breaking that item. This is same as fence novelty.</td><td>Breaking fences on one side of the item, will enable breaking that item.</td><td>Breaking all fences around the item, will enable breaking that item.</td><td>Attribute of fence (e.g. wooden, iron)</td><td>-</td></tr>
  <tr><td>firewall</td><td>Walls are replaced by fire-walls, agent dies when it's next to fire-wall.</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
  <tr><td>remapaction</td><td>Actions are remapped randomly</td><td>Only manipulation actions (e.g. Forward, Left, Right, Break, Place_tree_tap, Extract_rubber) are remapped.</td><td>Manipulation actions and craft actions (e.g. Craft_plank, Craft_stick, Craft_tree_tap, Craft_pogo_stick) are remapped.</td><td>Manipulation actions, craft actions and select actions (e.g. Select_crafting_table, Select_plank, Select_pogo_stick, Select_rubber, Select_stick, Select_tree_log, Select_tree_tap) are remapped.</td><td>-</td><td>-</td></tr>
  <tr><td>replaceitem</td><td>Replace an existing item with a new item.</td><td>5-10% of existing item are replaced with the new item.</td><td>40-90% of existing item are replaced with the new item.</td><td>100% of existing item are replaced with the new item.</td><td>Item to replace (e.g. wall). Must be an existing item.</td><td>Item to replace with (e.g. stone-wall). Must be a new item.</td></tr>
@@ -238,21 +239,23 @@ env = inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2)
 
 <tr>
 <td>
-<b>firewall</b>
-<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_firewall.gif" alt="drawing" width="800" height="250"/>
+<b>fencerestriction</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_fencerestriction.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
-<b>remapaction</b>
-<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_remapaction.gif" alt="drawing" width="800" height="250"/>
+<b>firewall</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_firewall.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 
 <tr>
 <td>
-<b>replaceitem</b>
-<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_replaceitem.gif" alt="drawing" width="800" height="250"/>
+<b>remapaction</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_remapaction.gif" alt="drawing" width="800" height="250"/>
 </td>
 <td>
+<b>replaceitem</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_replaceitem.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 
@@ -297,7 +300,7 @@ from gym_novel_gridworlds.wrappers import LimitActions
 env_id = 'NovelGridworld-Bow-v0'
 env = gym.make(env_id)
 
-env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow')
+env = LimitActions(env, {'Forward', 'Left', 'Right', 'Break', 'Craft_bow'})
 ```
 
 #### List of Wrappers
