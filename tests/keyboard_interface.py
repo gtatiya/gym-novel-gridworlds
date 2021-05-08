@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     # novelty_wrappers
     # novelty_name:
-    # addchop, additem, addjump, axe, axetobreak, breakincrease, extractincdec, fence, fencerestriction, firewall
+    # addchop, additem, addjump, axe, axetobreak, breakincrease, crate, extractincdec, fence, fencerestriction, firewall
     # remapaction, replaceitem
     novelty_name = ''
     # novelty_arg1:
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # axe - optional: true, false (default) | replaceitem - any item name (e.g. brick)
     novelty_arg2 = ''
     # difficulty
-    # Only used for: additem, axe, axetobreak, fence, fencerestriction, firewall, remapaction, replaceitem
+    # Only used for: additem, axe, axetobreak, crate, fence, fencerestriction, firewall, remapaction, replaceitem
     difficulty = 'medium'  # easy, medium, hard
 
     if novelty_name:

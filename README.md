@@ -180,6 +180,7 @@ env = inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2)
  <tr><td>axe</td><td>An axe is introduced. Using axe reduces the step_cost when Break action is used. If novelty_arg2 is set to true, the agent will get 2 items in inventory after break action instead of 1. There are 12 variants of this novelty: 3 difficulties x 2 attributes of axe x 2 quantities on breaking.</td><td>An axe is in the inventory. The agent must select axe to use it.</td><td>An axe in the map. The agent must go near the axe to grab it.</td><td>A recipe to craft axe is given. The agent must craft the axe.</td><td>Attribute of axe (e.g. wooden, iron)</td><td>Optional: true or false.If true, the agent will get 2 items in inventory after break action otherwise 1.</td></tr>
  <tr><td>axetobreak</td><td>An axe is introduced and axe required to break items. Using axe reduces the step_cost when Break action is used. There are 6 variants of this novelty: 3 difficulties x 2 attributes of axe.</td><td>An axe is in the inventory. The agent must select axe to use it.</td><td>An axe in the map. The agent must go near the axe to grab it.</td><td>A recipe to craft axe is given. The agent must craft the axe.</td><td>Attribute of axe (e.g. wooden, iron)</td><td>-</td></tr>
  <tr><td>breakincrease</td><td>The agent gets 2 items in the inventory when the agent breaks that item instead of 1.</td><td>-</td><td>-</td><td>-</td><td>Optional: any existing item (e.g. tree_log), Default: all items</td><td>-</td></tr>
+ <tr><td>crate</td><td>A new item, crate, is introduced in the map. When the crate is broken, some ingredients of the goal item to craft are added in the inventory.</td><td>100% of the ingredients of the goal item to craft are added in the inventory.</td><td>50-90% of the ingredients of the goal item to craft are added in the inventory.</td><td>10-50% of the ingredients of the goal item to craft are added in the inventory.</td><td>-</td><td>-</td></tr>
  <tr><td>extractincdec</td><td>The agent gets more/less items in the inventory when the agent extracts it instead of the default quantity.</td><td>-</td><td>-</td><td>-</td><td>increase or decrease</td><td>-</td></tr>
  <tr><td>fence</td><td>Items in the map are blocked by fence. The agent must break the fence to reach the blocked items. There are 6 variants of this novelty: 3 difficulties x 2 attributes of fence.</td><td>20-50% items in the map are blocked by fence.</td><td>50-90% items in the map are blocked by fence.</td><td>90-100% items in the map are blocked by fence.</td><td>Attribute of fence (e.g. wooden, iron)</td><td>-</td></tr>
  <tr><td>fencerestriction</td><td>Restrict breaking an item around fence until fence(s) are broken. All fences are always breakable. 50-90% items in the map are blocked by fence (fence medium novelty).</td><td>Breaking one fence next to the item, will enable breaking that item. This is same as fence novelty.</td><td>Breaking fences on one side of the item, will enable breaking that item.</td><td>Breaking all fences around the item, will enable breaking that item.</td><td>Attribute of fence (e.g. wooden, iron)</td><td>-</td></tr>
@@ -228,34 +229,43 @@ env = inject_novelty(env, novelty_name, difficulty, novelty_arg1, novelty_arg2)
 
 <tr>
 <td>
+<b>crate</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_crate.gif" alt="drawing" width="800" height="250"/>
+</td>
+<td>
 <b>extractincdec</b>
 <img src="pics/novelties_demo/NovelGridworld-Bow-v1_extractincdec.gif" alt="drawing" width="800" height="250"/>
 </td>
+</tr>
+
+<tr>
 <td>
 <b>fence</b>
 <img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_fence.gif" alt="drawing" width="800" height="250"/>
 </td>
-</tr>
-
-<tr>
 <td>
 <b>fencerestriction</b>
 <img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_fencerestriction.gif" alt="drawing" width="800" height="250"/>
 </td>
+</tr>
+
+<tr>
 <td>
 <b>firewall</b>
 <img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_firewall.gif" alt="drawing" width="800" height="250"/>
+</td>
+<td>
+<b>remapaction</b>
+<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_remapaction.gif" alt="drawing" width="800" height="250"/>
 </td>
 </tr>
 
 <tr>
 <td>
-<b>remapaction</b>
-<img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_remapaction.gif" alt="drawing" width="800" height="250"/>
-</td>
-<td>
 <b>replaceitem</b>
 <img src="pics/novelties_demo/NovelGridworld-Pogostick-v1_replaceitem.gif" alt="drawing" width="800" height="250"/>
+</td>
+<td>
 </td>
 </tr>
 

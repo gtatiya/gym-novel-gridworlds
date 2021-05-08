@@ -1034,6 +1034,64 @@ class AddItem(gym.core.Wrapper):
         return obs
 
 
+class Crate(gym.core.Wrapper):
+    """
+    Novelty wrapper to add crate(s) in the map. When the crate is broken, some ingredients of the goal_item_to_craft
+    gets in the inventory
+    """
+
+    def __init__(self, env, difficulty):
+        super().__init__(env)
+
+        self.env2 = AddItem(env, 'easy', item_to_add='crate')
+
+        if difficulty == 'easy':
+            item_percent_range = (99, 100)
+        elif difficulty == 'medium':
+            item_percent_range = (50, 90)
+        else:
+            item_percent_range = (10, 50)
+        item_percent = np.random.randint(low=item_percent_range[0], high=item_percent_range[1], size=1)[0]
+
+        total_ingredients = 0
+        ingredients = []
+        for item in self.recipes[self.goal_item_to_craft]['input']:
+            total_ingredients += self.recipes[self.goal_item_to_craft]['input'][item]
+            ingredients.append(item)
+
+        crate_ingredients_num = int(np.ceil((item_percent / 100) * total_ingredients))
+
+        self.crate_ingredients = []
+        while crate_ingredients_num:
+            item = np.random.choice(ingredients, size=1)[0]
+            if self.crate_ingredients.count(item) < self.recipes[self.goal_item_to_craft]['input'][item]:
+                self.crate_ingredients.append(item)
+                crate_ingredients_num -= 1
+
+    def reset(self):
+
+        obs = self.env2.reset()
+
+        return obs
+
+    def step(self, action_id):
+
+        if hasattr(self, 'limited_actions_id'):
+            assert 'Break' in self.limited_actions_id, "Cannot use crate novelty because you do not have Break in LimitActions"
+            actions_id = self.limited_actions_id
+        else:
+            actions_id = self.actions_id
+
+        if action_id == actions_id['Break'] and self.env.block_in_front_str == 'crate':
+            for item in self.crate_ingredients:
+                self.env.inventory_items_quantity[item] += 1
+            obs, reward, done, info = self.env.step(action_id)
+        else:
+            obs, reward, done, info = self.env.step(action_id)
+
+        return obs, reward, done, info
+
+
 class ReplaceItem(gym.core.Wrapper):
     """
     Novelty wrapper to replace an item with another
@@ -1527,10 +1585,10 @@ class ExtractIncDec(gym.core.Wrapper):
 
 def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelty_arg2=''):
 
-    novelty_names = ['addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease', 'extractincdec', 'fence',
+    novelty_names = ['addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease', 'crate', 'extractincdec', 'fence',
                      'fencerestriction', 'firewall', 'remapaction', 'replaceitem']
     assert novelty_name in novelty_names, "novelty_name must be one of " + str(novelty_names)
-    if novelty_name in ['additem', 'axe', 'axetobreak', 'fence', 'fencerestriction', 'firewall', 'remapaction', 'replaceitem']:
+    if novelty_name in ['additem', 'axe', 'axetobreak', 'crate', 'fence', 'fencerestriction', 'firewall', 'remapaction', 'replaceitem']:
         assert difficulty in ['easy', 'medium', 'hard'], "difficulty must be one of 'easy', 'medium', 'hard'"
 
     if novelty_name == 'addchop':
@@ -1578,6 +1636,8 @@ def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelt
             env = BreakIncrease(env, novelty_arg1)
         else:
             env = BreakIncrease(env)
+    elif novelty_name == 'crate':
+        env = Crate(env, difficulty)
     elif novelty_name == 'extractincdec':
         assert novelty_arg1 in ['increase', 'decrease'], \
             "For extractincdec novelty, novelty_arg1 ('increase', 'decrease') is needed"
