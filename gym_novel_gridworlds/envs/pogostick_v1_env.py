@@ -50,8 +50,8 @@ class PogostickV1Env(gym.Env):
 
         # Action Space
         self.actions_id = dict()
-        self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4,
-                                        'Extract_rubber': 5}
+        self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Back': 3, 'Break': 4, 'Place_tree_tap': 5,
+                                        'Extract_rubber': 6}
         self.actions_id.update(self.manipulation_actions_id)
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
@@ -229,7 +229,7 @@ class PogostickV1Env(gym.Env):
 
     def step(self, action_id):
         """
-        Actions: {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4, 'Extract_rubber': 5,
+        Actions: {'Forward': 0, 'Left': 1, 'Right': 2, 'Back': 3, 'Break': 4, 'Place_tree_tap': 5, 'Extract_rubber': 6,
             Craft action for each recipe, Select action for each item except unbreakable items}
         """
 
@@ -275,6 +275,17 @@ class PogostickV1Env(gym.Env):
                 self.set_agent_facing('NORTH')
             elif self.agent_facing_str == 'EAST':
                 self.set_agent_facing('SOUTH')
+
+            step_cost = 24.0
+        elif action_id == self.actions_id['Back']:
+            if self.agent_facing_str == 'NORTH':
+                self.set_agent_facing('SOUTH')
+            elif self.agent_facing_str == 'SOUTH':
+                self.set_agent_facing('NORTH')
+            elif self.agent_facing_str == 'WEST':
+                self.set_agent_facing('EAST')
+            elif self.agent_facing_str == 'EAST':
+                self.set_agent_facing('WEST')
 
             step_cost = 24.0
         elif action_id == self.actions_id['Break']:
