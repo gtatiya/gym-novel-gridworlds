@@ -58,3 +58,8 @@ register(
     id='NovelGridworld-Pogostick-v1',
     entry_point='gym_novel_gridworlds.envs:PogostickV1Env',
 )
+
+register(
+    id='NovelGridworld-Pogostick-v2',
+    entry_point='gym_novel_gridworlds.envs:PogostickV2Env',
+)

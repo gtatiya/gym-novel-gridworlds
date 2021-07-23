@@ -26,9 +26,9 @@ def assign_keys(env_):
             return key_action_id_dict
 
     actions_key = {'Forward': 'w', 'Left': 'a', 'Right': 'd', 'Break': 'e', 'Chop': 'q', 'Jump': 'space',
-                   'Place_tree_tap': 'z', 'Extract_rubber': 'x', 'Extract_string': 'x'}
+                    'Place_tree_tap': 'z', 'Extract_rubber': 'x', 'Extract_string': 'x', 'Collect': 'x', 'Use': 'c'}
 
-    if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1']:
+    if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1', 'NovelGridworld-Pogostick-v2']:
         key_action_id_dict = {}
         for action in actions_key:
             if action in actions_id:
@@ -101,7 +101,7 @@ def fix_item_location(item, location):
 
 
 if __name__ == "__main__":
-    env_id = 'NovelGridworld-Pogostick-v1'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
+    env_id = 'NovelGridworld-Pogostick-v2'  # NovelGridworld-v6, NovelGridworld-Bow-v0, NovelGridworld-Pogostick-v0
     env = gym.make(env_id)
 
     # env.map_size = 12  # np.random.randint(low=10, high=20, size=1)[0]

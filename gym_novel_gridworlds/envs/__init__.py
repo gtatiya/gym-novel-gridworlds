@@ -11,3 +11,4 @@ from gym_novel_gridworlds.envs.bow_v1_env import BowV1Env
 
 from gym_novel_gridworlds.envs.pogostick_v0_env import PogostickV0Env
 from gym_novel_gridworlds.envs.pogostick_v1_env import PogostickV1Env
+from gym_novel_gridworlds.envs.pogostick_v2_env import PogostickV2Env
