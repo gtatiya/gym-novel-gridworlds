@@ -4,7 +4,7 @@ import gym
 import gym_novel_gridworlds
 from gym_novel_gridworlds.wrappers import SaveTrajectories, LimitActions
 from gym_novel_gridworlds.observation_wrappers import LidarInFront, AgentMap
-from gym_novel_gridworlds.novelty_wrappers import inject_novelty
+from gym_novel_gridworlds.rapid_learn_novelty_wrapper import inject_novelty
 
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv

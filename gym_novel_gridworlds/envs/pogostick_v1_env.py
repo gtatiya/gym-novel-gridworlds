@@ -50,8 +50,8 @@ class PogostickV1Env(gym.Env):
 
         # Action Space
         self.actions_id = dict()
-        self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4,
-                                        'Extract_rubber': 5}
+        self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3,
+                                        'Extract_rubber': 4}
         self.actions_id.update(self.manipulation_actions_id)
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
@@ -292,44 +292,55 @@ class PogostickV1Env(gym.Env):
                 message = "Cannot break " + self.block_in_front_str
 
             step_cost = 3600.0
-        elif action_id == self.actions_id['Place_tree_tap']:
-            if self.inventory_items_quantity['tree_tap'] >= 1:
-                if self.block_in_front_str == 'air':
-                    r, c = self.block_in_front_location
-                    self.map[r][c] = self.items_id['tree_tap']  # Place_tree_tap
-                    self.inventory_items_quantity['tree_tap'] -= 1
-                    message = "Block tree_tap placed"
+        # elif action_id == self.actions_id['Place_tree_tap']:
+        #     if self.inventory_items_quantity['tree_tap'] >= 1:
+        #         if self.block_in_front_str == 'air':
+        #             r, c = self.block_in_front_location
+        #             self.map[r][c] = self.items_id['tree_tap']  # Place_tree_tap
+        #             self.inventory_items_quantity['tree_tap'] -= 1
+        #             message = "Block tree_tap placed"
 
-                    # Make sure that block_in_front_location is next to a tree
-                    block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
-                    if block_in_front_next_to_tree:
-                        reward = self.reward_intermediate
-                else:
-                    result = False
-                    message = "Block " + self.block_in_front_str + " already exists when trying to place block"
-            else:
-                result = False
-                message = "Item not found in inventory"
+        #             # Make sure that block_in_front_location is next to a tree
+        #             block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
+        #             if block_in_front_next_to_tree:
+        #                 reward = self.reward_intermediate
+        #         else:
+        #             result = False
+        #             message = "Block " + self.block_in_front_str + " already exists when trying to place block"
+        #     else:
+        #         result = False
+        #         message = "Item not found in inventory"
 
-            step_cost = 300.0
         elif action_id == self.actions_id['Extract_rubber']:
             step_cost = 120.0  # default step_cost
 
-            # Make sure that block_in_front_location is next to a tree
-            block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
-
-            if self.block_in_front_str == 'tree_tap':
-                if block_in_front_next_to_tree:
+            if self.block_in_front_str == 'tree_log':
+                if self.selected_item == 'tree_tap':
                     self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
                     reward = self.reward_intermediate
                     step_cost = 50000
                 else:
                     result = False
-                    message = "No tree_log near tree_tap"
+                    message = "No tree_tap selected"
             else:
                 result = False
-                message = "No tree_tap found"
-        # Craft
+                message = "No tree_log found"
+
+        #     # Make sure that block_in_front_location is next to a tree
+        #     block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
+
+        #     if self.block_in_front_str == 'tree_tap':
+        #         if block_in_front_next_to_tree:
+        #             self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
+        #             reward = self.reward_intermediate
+        #             step_cost = 50000
+        #         else:
+        #             result = False
+        #             message = "No tree_log near tree_tap"
+        #     else:
+        #         result = False
+        #         message = "No tree_tap found"
+        # # Craft
         elif action_id in self.craft_actions_id.values():
             craft_action = list(self.craft_actions_id.keys())[list(self.craft_actions_id.values()).index(action_id)]
             item_to_craft = '_'.join(craft_action.split('_')[1:])

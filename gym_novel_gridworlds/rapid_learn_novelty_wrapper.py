@@ -4,6 +4,7 @@ import numpy as np
 
 import gym
 from gym import error, spaces, utils
+import time
 
 
 class AxeEasy(gym.core.Wrapper):
@@ -1826,6 +1827,8 @@ class ExtractIncDec(gym.core.Wrapper):
 
 def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelty_arg2=''):
 
+    print("INJECTING NOVELTY - YASHHH")
+    time.sleep(10)
     novelty_names = ['addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease', 'crate', 'extractincdec', 'fence',
                      'fencerestriction', 'firewall', 'remapaction', 'replaceitem', 'cratescatter', 'scatterinventory','keywall']
     assert novelty_name in novelty_names, "novelty_name must be one of " + str(novelty_names)
