@@ -453,9 +453,9 @@ class AxetoBreakEasy(gym.core.Wrapper):
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
 
-    def reset(self):
-
-        obs = self.env.reset()
+    def reset(self, reset_from_failed_state = False, env_instance = None):
+        # Modified the reset function to take the arguments for resetting to the failed state. 
+        obs = self.env.reset(reset_from_failed_state = reset_from_failed_state, env_instance = env_instance)
 
         self.env.inventory_items_quantity.update({self.axe_name: 1})
 

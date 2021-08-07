@@ -83,9 +83,9 @@ class PogostickV1Env(gym.Env):
 
         self.last_done = False  # last done
 
-    def reset(self, map_size=None, items_id=None, items_quantity=None):
+    def reset(self, reset_from_failed_state = False, env_instance = None):
 
-        # print("RESETTING " + self.env_id + " ...")
+        print("RESETTING " + self.env_id + " ...")
         if self.env is not None:
             print("RESTORING " + self.env_id + " ...")
             self.map_size = copy.deepcopy(self.env.map_size)
@@ -108,13 +108,6 @@ class PogostickV1Env(gym.Env):
 
             return obs
 
-        if map_size is not None:
-            self.map_size = map_size
-        if items_id is not None:
-            self.items_id = items_id
-        if items_quantity is not None:
-            self.items_quantity = items_quantity
-
         # Variables to reset for each reset:
         self.inventory_items_quantity = {item: 0 for item in self.items}
         self.selected_item = ''
@@ -125,6 +118,16 @@ class PogostickV1Env(gym.Env):
         self.last_step_cost = 0  # last received step_cost
         self.last_reward = 0  # last received reward
         self.last_done = False  # last done
+
+        if reset_from_failed_state: # when we need to shuffle the episode from the failed state
+            # self.map_size = env_instance.map_size
+            self.items_id = env_instance.items_id
+            self.items_quantity = env_instance.items_quantity
+            self.inventory_items_quantity = env_instance.inventory_items_quantity
+            self.selected_item = env_instance.selected_item
+            self.block_in_front_str = env_instance.block_in_front_str
+            self.block_in_front_id = env_instance.block_in_front_id
+            self.selected_item = env_instance.selected_item
 
         self.map = np.zeros((self.map_size - 2, self.map_size - 2), dtype=int)  # air=0
         self.map = np.pad(self.map, pad_width=1, mode='constant', constant_values=self.items_id['wall'])
@@ -149,6 +152,23 @@ class PogostickV1Env(gym.Env):
 
         if self.agent_location not in self.available_locations:
             self.available_locations.append(self.agent_location)
+
+        # Here we are setting the same blcok in front as the failed agent had.
+        if reset_from_failed_state: # when we need to shuffle the episode from the failed state
+            desired_block_in_front_str = env_instance.block_in_front_str # save the desired block in fron from the previous env instance.
+            result = np.where(self.map == self.items_id[desired_block_in_front_str])
+            i = np.random.choice(len(result))
+            r, c = result[0][i], result[1][i]
+            self.update_block_in_front()
+            r2, c2 = self.block_in_front_location # to place 
+            if self.map[r2][c2] == 0:
+                self.map[r2][c2] = self.items_id[desired_block_in_front_str]
+                self.map[r][c] = 0 # set the original to air
+            else: # if the exisitng block in front was not air, then place that item randomly somewhere else.
+                # now place the exoisiting item somewhere else
+                item_str = list(self.items_id.keys())[list(self.items_id.values()).index(self.map[r2][c2])]
+                self.add_item_to_map(item_str, 1) 
+                self.map[r2][c2] = self.items_id[desired_block_in_front_str]
 
         # Update after each reset
         obs = self.get_observation()
