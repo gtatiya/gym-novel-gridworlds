@@ -27,7 +27,7 @@ class PogostickV1Env(gym.Env):
         # PogostickV1Env attributes
         self.env_id = 'NovelGridworld-Pogostick-v1'
         self.env = env  # env to restore in reset
-        self.map_size = 10
+        self.map_size = 15
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
