@@ -12,6 +12,7 @@ from matplotlib.cm import get_cmap
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
+import time
 
 
 class PogostickV1Env(gym.Env):
@@ -27,7 +28,7 @@ class PogostickV1Env(gym.Env):
         # PogostickV1Env attributes
         self.env_id = 'NovelGridworld-Pogostick-v1'
         self.env = env  # env to restore in reset
-        self.map_size = 15
+        self.map_size = 10
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
@@ -39,10 +40,13 @@ class PogostickV1Env(gym.Env):
         self.items = {'air', 'crafting_table', 'plank', 'pogo_stick', 'rubber', 'stick', 'tree_log', 'tree_tap', 'wall'}
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
         self.unbreakable_items = {'air', 'wall'}
+        self.non_selectable_items = {'rubber', 'plank', 'stick', 'pogo_stick','crafting_table', 'tree_log'}
         self.goal_item_to_craft = 'pogo_stick'
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'tree_log': 5}
+        self.max_items_quantity = {'crafting_table': 1, 'tree_log': 5} # keep track of maximum items for generating random configurations
         self.inventory_items_quantity = {item: 0 for item in self.items}
+        self.max_inventory_items_quantity = {'air':0, 'crafting_table':0, 'plank':6, 'pogo_stick':0, 'rubber':1, 'stick':6, 'tree_log':5, 'tree_tap':1, 'wall':0}        
         self.selected_item = ''
         self.entities = set()
         self.available_locations = []  # locations that do not have item placed
@@ -63,10 +67,13 @@ class PogostickV1Env(gym.Env):
         self.actions_id.update(self.craft_actions_id)
         # Add a Select action for each item except unbreakable items
         self.select_actions_id = {'Select_' + item: len(self.actions_id) + i for i, item in
-                                  enumerate(sorted(list(self.items ^ self.unbreakable_items)))}
+                                  enumerate(sorted(list(self.items ^ self.unbreakable_items ^ self.non_selectable_items)))}
+        # self.select_actions_id
         self.actions_id.update(self.select_actions_id)
+        # print("Pogostick v1 action is: ", self.actions_id)
         self.action_space = spaces.Discrete(len(self.actions_id))
-
+        print("\n")
+        time.sleep(3)
         self.last_action = 'Forward'  # last actions executed
         self.step_count = 0  # no. of steps taken
         self.last_step_cost = 0  # last received step_cost
@@ -85,7 +92,7 @@ class PogostickV1Env(gym.Env):
 
     def reset(self, reset_from_failed_state = False, env_instance = None):
 
-        print("RESETTING " + self.env_id + " ...")
+        # print("RESETTING " + self.env_id + " ...")
         if self.env is not None:
             print("RESTORING " + self.env_id + " ...")
             self.map_size = copy.deepcopy(self.env.map_size)
@@ -120,14 +127,15 @@ class PogostickV1Env(gym.Env):
         self.last_done = False  # last done
 
         if reset_from_failed_state: # when we need to shuffle the episode from the failed state
-            # self.map_size = env_instance.map_size
+            self.map_size = env_instance.map_size
             self.items_id = env_instance.items_id
-            self.items_quantity = env_instance.items_quantity
-            self.inventory_items_quantity = env_instance.inventory_items_quantity
-            self.selected_item = env_instance.selected_item
-            self.block_in_front_str = env_instance.block_in_front_str
-            self.block_in_front_id = env_instance.block_in_front_id
-            self.selected_item = env_instance.selected_item
+            # self.items_quantity = env_instance.items_quantity # randomize
+            self.items_quantity = {item:np.random.randint(1,self.max_items_quantity[item]+1) for item in self.max_items_quantity} #Need to randomize the items quantity after novelty injection (thorugh wrapper)
+            self.inventory_items_quantity = {item:np.random.randint(0,self.max_inventory_items_quantity[item]+1) for item in self.max_inventory_items_quantity} #Need to randomize the inventory quantity after novelty injection (thorugh wrapper)
+            # self.selected_item = env_instance.selected_item # randomize
+            self.selected_item = np.random.choice(list(set(self.inventory_items_quantity.keys()) ^ self.unbreakable_items)) # randomize # all the items that the agent can have in its inventory except the unbreakable items. 
+            self.block_in_front_str = env_instance.block_in_front_str # randomize # already being randomize
+            self.block_in_front_id = env_instance.block_in_front_id # randomize # already being randomized
 
         self.map = np.zeros((self.map_size - 2, self.map_size - 2), dtype=int)  # air=0
         self.map = np.pad(self.map, pad_width=1, mode='constant', constant_values=self.items_id['wall'])
@@ -153,11 +161,16 @@ class PogostickV1Env(gym.Env):
         if self.agent_location not in self.available_locations:
             self.available_locations.append(self.agent_location)
 
+        # not use for now, since we want to randomize initial configurations.
         # Here we are setting the same blcok in front as the failed agent had.
         if reset_from_failed_state: # when we need to shuffle the episode from the failed state
             desired_block_in_front_str = env_instance.block_in_front_str # save the desired block in fron from the previous env instance.
             result = np.where(self.map == self.items_id[desired_block_in_front_str])
-            i = np.random.choice(len(result))
+            # print("desired block in front: ", desired_block_in_front_str)
+            # print("result ",result)
+            # print ("result", type(result))
+            i = np.random.choice(len(result)-1)
+            # print ("i ", i)
             r, c = result[0][i], result[1][i]
             self.update_block_in_front()
             r2, c2 = self.block_in_front_location # to place 
@@ -252,6 +265,7 @@ class PogostickV1Env(gym.Env):
         Actions: {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4, 'Extract_rubber': 5,
             Craft action for each recipe, Select action for each item except unbreakable items}
         """
+        # print("Pogostick v1 action id: {} and action is: {} ".format(action_id, list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]))
 
         self.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
         r, c = self.agent_location

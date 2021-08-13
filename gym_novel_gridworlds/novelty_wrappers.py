@@ -449,6 +449,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
         self.env.items.add(self.axe_name)
         self.env.items_id.setdefault(self.axe_name, len(self.items_id))
         self.env.inventory_items_quantity.update({self.axe_name: 1})
+        self.env.max_inventory_items_quantity.update({self.axe_name: 1})
         self.env.entities.add(self.axe_name)
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
