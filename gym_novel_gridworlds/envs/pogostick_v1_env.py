@@ -48,8 +48,6 @@ class PogostickV1Env(gym.Env):
         self.entities = set()
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
-        self.all_items = []
-
         # Action Space  
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3,
@@ -211,11 +209,6 @@ class PogostickV1Env(gym.Env):
                 count += 1
             self.not_available_locations.append(self.available_locations.pop(idx))
 
-    def generate_id_items(self):
-        self.all_items = [None for _ in range(len(self.items_id))]
-        for item in self.items_id:
-            self.all_items[self.items_id[item]] = item
-
     def set_agent_location(self, r, c):
 
         self.agent_location = (r, c)
@@ -320,6 +313,8 @@ class PogostickV1Env(gym.Env):
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
                 self.inventory_items_quantity[self.block_in_front_str] += 1
+                self.items_quantity[self.block_in_front_str] -= 1
+                print("Should be updating quantity")
 
                 if self.block_in_front_str == 'tree_log':
                     reward = self.reward_intermediate
@@ -696,14 +691,13 @@ class PogostickV1Env(gym.Env):
     def get_info(self):
 
         self.block_in_front = {'name':self.block_in_front_str}
-        self.generate_id_items()
         self.items_location = {}
-        env_map = self.map.copy()
-        self.map_to_plot = np.zeros((env_map.shape[0], env_map.shape[1]))  # Y (row) is before X (column) in matrix
-        for r in range(env_map.shape[0]):
-            for c in range(env_map.shape[1]):
-                item_name = self.all_items[env_map[r][c]]
-                self.items_location.setdefault(item_name, [])
+        for item in self.items_quantity:
+            self.items_location[item] = self.items_quantity[item]
+        wall_size = self.map_size*4-4
+        air_size = self.map_size*self.map_size - wall_size - sum(self.items_quantity[item] for item in self.items_quantity)
+        self.items_location['wall'] = wall_size
+        self.items_location['air'] = air_size
         self.inventory_quantity_dict = {}
         unfiltered_inventory_quantity_dict = self.inventory_items_quantity.copy()
         for item in unfiltered_inventory_quantity_dict:

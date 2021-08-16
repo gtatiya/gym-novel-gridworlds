@@ -488,6 +488,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
                     block_r, block_c = self.env.block_in_front_location
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+                    self.items_quantity[self.env.block_in_front_str] -= 1
 
                     reward = self.reward_intermediate
 
@@ -496,6 +497,7 @@ class AxetoBreakEasy(gym.core.Wrapper):
                     block_r, block_c = self.env.block_in_front_location
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+                    self.items_quantity[self.env.block_in_front_str] -= 1
 
                     reward = self.reward_intermediate
 
