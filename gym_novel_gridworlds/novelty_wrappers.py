@@ -5,7 +5,6 @@ import numpy as np
 import gym
 from gym import error, spaces, utils
 
-
 class AxeEasy(gym.core.Wrapper):
     """
     Novelty wrapper to add a new item (axe) in the inventory
@@ -452,6 +451,11 @@ class AxetoBreakEasy(gym.core.Wrapper):
         self.env.entities.add(self.axe_name)
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
+        self.action_space = spaces.Discrete(len(self.env.actions_id))
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
+        self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
+            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+        self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)
 
     def reset(self, reset_from_failed_state = False, env_instance = None):
         # Modified the reset function to take the arguments for resetting to the failed state. 

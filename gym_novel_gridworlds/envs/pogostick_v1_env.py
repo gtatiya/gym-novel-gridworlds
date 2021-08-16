@@ -12,6 +12,7 @@ from matplotlib.cm import get_cmap
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
+import time
 
 
 class PogostickV1Env(gym.Env):
@@ -27,7 +28,7 @@ class PogostickV1Env(gym.Env):
         # PogostickV1Env attributes
         self.env_id = 'NovelGridworld-Pogostick-v1'
         self.env = env  # env to restore in reset
-        self.map_size = 15
+        self.map_size = 10
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
@@ -38,7 +39,7 @@ class PogostickV1Env(gym.Env):
         self.block_in_front_location = (0, 0)  # row, column
         self.items = {'air', 'crafting_table', 'plank', 'pogo_stick', 'rubber', 'stick', 'tree_log', 'tree_tap', 'wall'}
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
-        self.unbreakable_items = {'air', 'wall'}
+        self.unbreakable_items = {'air', 'wall','crafting_table'}
         self.goal_item_to_craft = 'pogo_stick'
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'tree_log': 5}
@@ -47,8 +48,9 @@ class PogostickV1Env(gym.Env):
         self.entities = set()
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
+        self.all_items = []
 
-        # Action Space
+        # Action Space  
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3,
                                         'Extract_rubber': 4}
@@ -62,8 +64,9 @@ class PogostickV1Env(gym.Env):
                                  enumerate(sorted(self.recipes.keys()))}
         self.actions_id.update(self.craft_actions_id)
         # Add a Select action for each item except unbreakable items
+        self.unselectable_items = {'crafting_table','plank','pogo_stick','rubber','stick','tree_log'}
         self.select_actions_id = {'Select_' + item: len(self.actions_id) + i for i, item in
-                                  enumerate(sorted(list(self.items ^ self.unbreakable_items)))}
+                                  enumerate(sorted(list(self.items ^ self.unbreakable_items ^ self.unselectable_items)))}
         self.actions_id.update(self.select_actions_id)
         self.action_space = spaces.Discrete(len(self.actions_id))
 
@@ -73,9 +76,17 @@ class PogostickV1Env(gym.Env):
 
         # Observation Space
         self.max_items = 20
-        self.observation_space = spaces.Box(low=0, high=self.max_items, shape=(self.map_size, self.map_size, 1))
-        self.observation_space = spaces.Dict({'map': self.observation_space})
+        self.num_beams = 8
+        self.max_beam_range = 40
+        self.items_lidar = ['wall', 'crafting_table', 'tree_log']
+        self.items_id_lidar = self.set_items_id(self.items_lidar)
+        self.low = np.array([0] * (len(self.items_lidar) * self.num_beams) + [0] * len(self.inventory_items_quantity) + [0])
+        self.high = np.array([self.max_beam_range] * (len(self.items_lidar) * self.num_beams) + [10] * len(
+            self.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it
+        self.observation_space = spaces.Box(self.low, self.high, dtype=int)
 
+        # print("block in front: ", self.block_in_front_str)
+        self.block_in_front = {'name':self.block_in_front_str}
         # Reward
         self.last_reward = 0  # last received reward
         self.reward_intermediate = 10
@@ -85,7 +96,7 @@ class PogostickV1Env(gym.Env):
 
     def reset(self, reset_from_failed_state = False, env_instance = None):
 
-        print("RESETTING " + self.env_id + " ...")
+        # print("RESETTING " + self.env_id + " ...")
         if self.env is not None:
             print("RESTORING " + self.env_id + " ...")
             self.map_size = copy.deepcopy(self.env.map_size)
@@ -200,6 +211,11 @@ class PogostickV1Env(gym.Env):
                 count += 1
             self.not_available_locations.append(self.available_locations.pop(idx))
 
+    def generate_id_items(self):
+        self.all_items = [None for _ in range(len(self.items_id))]
+        for item in self.items_id:
+            self.all_items[self.items_id[item]] = item
+
     def set_agent_location(self, r, c):
 
         self.agent_location = (r, c)
@@ -231,21 +247,21 @@ class PogostickV1Env(gym.Env):
 
         return items_id
 
-    def get_observation(self):
-        """
-        observation: map, agent_location, agent_facing_id, inventory_items_quantity
-        :return: observation
-        """
+    # def get_observation(self):
+    #     """
+    #     observation: map, agent_location, agent_facing_id, inventory_items_quantity
+    #     :return: observation
+    #     """
 
-        assert not self.max_items < len(self.items), "Cannot have more than " + str(self.max_items) + " items"
+    #     assert not self.max_items < len(self.items), "Cannot have more than " + str(self.max_items) + " items"
 
-        obs = {'map': self.map,
-               'agent_location': self.agent_location,
-               'agent_facing_id': self.agent_facing_id,
-               'inventory_items_quantity': self.inventory_items_quantity
-               }
+    #     obs = {'map': self.map,
+    #            'agent_location': self.agent_location,
+    #            'agent_facing_id': self.agent_facing_id,
+    #            'inventory_items_quantity': self.inventory_items_quantity
+    #            }
 
-        return obs
+    #     return obs
 
     def step(self, action_id):
         """
@@ -312,24 +328,6 @@ class PogostickV1Env(gym.Env):
                 message = "Cannot break " + self.block_in_front_str
 
             step_cost = 3600.0
-        # elif action_id == self.actions_id['Place_tree_tap']:
-        #     if self.inventory_items_quantity['tree_tap'] >= 1:
-        #         if self.block_in_front_str == 'air':
-        #             r, c = self.block_in_front_location
-        #             self.map[r][c] = self.items_id['tree_tap']  # Place_tree_tap
-        #             self.inventory_items_quantity['tree_tap'] -= 1
-        #             message = "Block tree_tap placed"
-
-        #             # Make sure that block_in_front_location is next to a tree
-        #             block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
-        #             if block_in_front_next_to_tree:
-        #                 reward = self.reward_intermediate
-        #         else:
-        #             result = False
-        #             message = "Block " + self.block_in_front_str + " already exists when trying to place block"
-        #     else:
-        #         result = False
-        #         message = "Item not found in inventory"
 
         elif action_id == self.actions_id['Extract_rubber']:
             step_cost = 120.0  # default step_cost
@@ -345,21 +343,6 @@ class PogostickV1Env(gym.Env):
             else:
                 result = False
                 message = "No tree_log found"
-
-        #     # Make sure that block_in_front_location is next to a tree
-        #     block_in_front_next_to_tree = self.is_block_in_front_next_to('tree_log')
-
-        #     if self.block_in_front_str == 'tree_tap':
-        #         if block_in_front_next_to_tree:
-        #             self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
-        #             reward = self.reward_intermediate
-        #             step_cost = 50000
-        #         else:
-        #             result = False
-        #             message = "No tree_log near tree_tap"
-        #     else:
-        #         result = False
-        #         message = "No tree_tap found"
         # # Craft
         elif action_id in self.craft_actions_id.values():
             craft_action = list(self.craft_actions_id.keys())[list(self.craft_actions_id.values()).index(action_id)]
@@ -387,7 +370,7 @@ class PogostickV1Env(gym.Env):
             reward = self.reward_done
             done = True
 
-        info = {'result': result, 'step_cost': step_cost, 'message': message}
+        # info = {'result': result, 'step_cost': step_cost, 'message': message}
 
         # Update after each step
         self.step_count += 1
@@ -395,6 +378,8 @@ class PogostickV1Env(gym.Env):
         self.last_reward = reward
         self.last_done = done
 
+        info = self.get_info()
+        info['result'] = result
         return obs, reward, done, info
 
     def update_block_in_front(self):
@@ -652,3 +637,82 @@ class PogostickV1Env(gym.Env):
 
     def close(self):
         return
+
+
+    def get_observation(self):
+        """
+        observation is lidarSignal + inventory_items_quantity
+        :return: observation
+        """
+
+        lidar_signals = self.get_lidarSignal()
+        if self.selected_item == '':
+            selected_item_id = self.items_id['air']
+        else:
+            selected_item_id = self.items_id[self.selected_item]
+        observation = lidar_signals + [self.inventory_items_quantity[item] for item in
+                                       sorted(self.inventory_items_quantity)] + [selected_item_id]
+
+        return np.array(observation)
+
+    def get_lidarSignal(self):
+        """
+        Send several beans (self.num_beams) at equally spaced angles in 360 degrees in front of agent within a range
+        For each bean store distance (beam_range) for each item in items_id_lidar if item is found otherwise 0
+        and return lidar_signals
+        """
+
+        direction_radian = {'NORTH': np.pi, 'SOUTH': 0, 'WEST': 3 * np.pi / 2, 'EAST': np.pi / 2}
+
+        # Shoot beams in 360 degrees in front of agent
+        angles_list = np.linspace(direction_radian[self.agent_facing_str] - np.pi,
+                                  direction_radian[self.agent_facing_str] + np.pi,
+                                  self.num_beams + 1)[:-1]  # 0 and 360 degree is same, so removing 360
+
+        lidar_signals = []
+        r, c = self.agent_location
+        for angle in angles_list:
+            x_ratio, y_ratio = np.round(np.cos(angle), 2), np.round((np.sin(angle)), 2)
+            beam_signal = np.zeros(len(self.items_id_lidar), dtype=int)#
+
+            # Keep sending longer beams until hit an object or wall
+            for beam_range in range(1, self.max_beam_range+1):
+                r_obj = r + np.round(beam_range * x_ratio)
+                c_obj = c + np.round(beam_range * y_ratio)
+                obj_id_rc = self.map[int(r_obj)][int(c_obj)]
+
+                # If bean hit an object or wall
+                if obj_id_rc != 0:
+                    item = list(self.items_id.keys())[list(self.items_id.values()).index(obj_id_rc)]
+                    if item in self.items_id_lidar:
+                        obj_id_rc = self.items_id_lidar[item]
+                        beam_signal[obj_id_rc - 1] = beam_range
+                    break
+
+            lidar_signals.extend(beam_signal)
+
+        return lidar_signals
+
+    def get_info(self):
+
+        self.block_in_front = {'name':self.block_in_front_str}
+        self.generate_id_items()
+        self.items_location = {}
+        env_map = self.map.copy()
+        self.map_to_plot = np.zeros((env_map.shape[0], env_map.shape[1]))  # Y (row) is before X (column) in matrix
+        for r in range(env_map.shape[0]):
+            for c in range(env_map.shape[1]):
+                item_name = self.all_items[env_map[r][c]]
+                self.items_location.setdefault(item_name, [])
+        self.inventory_quantity_dict = {}
+        unfiltered_inventory_quantity_dict = self.inventory_items_quantity.copy()
+        for item in unfiltered_inventory_quantity_dict:
+            if unfiltered_inventory_quantity_dict[item] > 0:
+                self.inventory_quantity_dict[item] = unfiltered_inventory_quantity_dict[item]
+
+        info = {'items_locs': self.items_location.copy(), \
+                'block_in_front': self.block_in_front.copy(), \
+                'inv_quant_dict': self.inventory_quantity_dict.copy(), \
+                'selected_item': self.selected_item}
+        # print("Actions ID: ", self.actions_id)
+        return info
