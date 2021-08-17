@@ -28,7 +28,7 @@ class PogostickV1Env(gym.Env):
         # PogostickV1Env attributes
         self.env_id = 'NovelGridworld-Pogostick-v1'
         self.env = env  # env to restore in reset
-        self.map_size = 10
+        self.map_size = 12
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
@@ -166,7 +166,7 @@ class PogostickV1Env(gym.Env):
         if reset_from_failed_state: # when we need to shuffle the episode from the failed state
             desired_block_in_front_str = env_instance.block_in_front_str # save the desired block in fron from the previous env instance.
             result = np.where(self.map == self.items_id[desired_block_in_front_str])
-            i = np.random.choice(len(result))
+            i = np.random.choice(len(result)-1)
             r, c = result[0][i], result[1][i]
             self.update_block_in_front()
             r2, c2 = self.block_in_front_location # to place 
@@ -314,7 +314,7 @@ class PogostickV1Env(gym.Env):
                 self.map[block_r][block_c] = 0
                 self.inventory_items_quantity[self.block_in_front_str] += 1
                 self.items_quantity[self.block_in_front_str] -= 1
-                print("Should be updating quantity")
+                # print("Should be updating quantity")
 
                 if self.block_in_front_str == 'tree_log':
                     reward = self.reward_intermediate

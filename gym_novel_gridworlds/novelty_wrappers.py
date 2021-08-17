@@ -556,6 +556,14 @@ class AxetoBreakMedium(gym.core.Wrapper):
         self.env.entities.add(self.axe_name)
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
+        self.env.items_lidar.append(self.axe_name)
+        self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)
+        self.action_space = spaces.Discrete(len(self.env.actions_id))
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
+        self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
+            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+        self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)        
+
 
     def step(self, action_id):
 
@@ -580,6 +588,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
                     block_r, block_c = self.env.block_in_front_location
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+                    self.items_quantity[self.env.block_in_front_str] -= 1
 
                     reward = self.reward_intermediate
 
@@ -588,6 +597,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
                     block_r, block_c = self.env.block_in_front_location
                     self.env.map[block_r][block_c] = 0
                     self.env.inventory_items_quantity[self.env.block_in_front_str] += 1
+                    self.items_quantity[self.env.block_in_front_str] -= 1
 
                     reward = self.reward_intermediate
 
@@ -628,6 +638,108 @@ class AxetoBreakMedium(gym.core.Wrapper):
             obs, reward, done, info = self.env.step(action_id)
 
         return obs, reward, done, info
+
+class FireCraftingTable(gym.core.Wrapper):
+    '''
+    Novelty wrapper to set crafting table on fire. Add a new object called water in agent's 
+    Inventory and add a new action called "spray". The agent needs to spray water on the crafting table
+    to access it.
+    '''
+    def __init__(self, env):
+        super().__init__(env)
+
+        self.water_name = 'water'  # wooden_axe, iron_axe
+        self.env.items.add(self.water_name)
+        self.env.items_id.setdefault(self.water_name, len(self.items_id))
+        self.env.inventory_items_quantity.update({self.water_name: 1})
+        self.env.entities.add(self.water_name)
+        self.env.select_actions_id.update({'Select_' + self.water_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
+        self.env.actions_id.update({'Spray':len(self.env.actions_id)})
+        print("\n actions ID are: ", self.env.actions_id )
+        self.action_space = spaces.Discrete(len(self.env.actions_id))
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
+        self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
+            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+        self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
+        
+        self.is_crafting_table_on_fire = True   
+
+    def reset(self, reset_from_failed_state = False, env_instance = None):
+        # Modified the reset function to take the arguments for resetting to the failed state. 
+        obs = self.env.reset(reset_from_failed_state = reset_from_failed_state, env_instance = env_instance)
+        self.is_crafting_table_on_fire = True   
+        self.env.inventory_items_quantity.update({self.water_name: 1})
+
+        return obs
+
+    def step(self, action_id):
+
+        if action_id == self.actions_id['Craft_tree_tap'] or action_id == self.actions_id['Craft_pogo_stick']:
+            if self.is_crafting_table_on_fire == False:
+                obs, reward, done, info = self.env.step(action_id)
+                return obs, reward, done, info
+            else:
+                info = self.env.get_info()
+                info['result'] = False
+                return self.env.get_observation(), -1, False, info
+        elif action_id == self.actions_id['Spray']:
+            if self.env.selected_item == self.water_name:
+                self.is_crafting_table_on_fire = False
+            info = self.env.get_info()
+            info['result'] = True
+            return self.env.get_observation(), -1, False, info
+        else:
+            obs, reward, done, info = self.env.step(action_id)
+            return obs, reward, done, info
+
+
+class RubberTree(gym.core.Wrapper):
+    '''
+    Novelty wrapper to set crafting table on fire. Add a new object called water in agent's 
+    Inventory and add a new action called "spray". The agent needs to spray water on the crafting table
+    to access it.
+    '''
+    def __init__(self, env):
+        super().__init__(env)
+    
+        self.rubber_tree_name = 'rubber_tree'  # wooden_axe, iron_axe
+        self.env.items.add(self.rubber_tree_name)
+        self.env.items_quantity.update({self.rubber_tree_name:1})
+        self.env.items_id.setdefault(self.rubber_tree_name, len(self.items_id))
+        self.env.unbreakable_items.add(self.rubber_tree_name)
+        self.env.items_lidar.append(self.rubber_tree_name)
+        self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)
+        self.env.unselectable_items.add(self.rubber_tree_name)
+        self.env.inventory_items_quantity.update({self.rubber_tree_name:0})
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
+        self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
+            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+        self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
+
+    # def reset(self, reset_from_failed_state = False, env_instance = None):
+    #     # Modified the reset function to take the arguments for resetting to the failed state. 
+    #     obs = self.env.reset(reset_from_failed_state = reset_from_failed_state, env_instance = env_instance)
+
+    #     return obs
+
+    def step(self, action_id):
+
+        if action_id == self.actions_id['Extract_rubber']:
+            self.update_block_in_front()
+            if self.block_in_front_str == self.rubber_tree_name and self.selected_item == 'tree_tap':
+                self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
+                reward = -1
+                info = self.env.get_info()
+                info['result'] = True
+                return self.env.get_observation(), reward, False, info
+            else:
+                info = self.env.get_info()
+                info['result'] = False
+                return self.env.get_observation(), -1, False, info 
+        else:
+            obs, reward, done, info = self.env.step(action_id)
+            return obs, reward, done, info
 
 
 class AxetoBreakHard(gym.core.Wrapper):
@@ -1833,7 +1945,7 @@ class ExtractIncDec(gym.core.Wrapper):
 def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelty_arg2=''):
 
     novelty_names = ['addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease', 'crate', 'extractincdec', 'fence',
-                     'fencerestriction', 'firewall', 'remapaction', 'replaceitem', 'cratescatter', 'scatterinventory','keywall']
+                     'fencerestriction', 'firewall', 'remapaction', 'replaceitem', 'cratescatter', 'scatterinventory','keywall','firecraftingtable', 'rubbertree']
     assert novelty_name in novelty_names, "novelty_name must be one of " + str(novelty_names)
     if novelty_name in ['additem', 'axe', 'keywall','cratescatter', 'scatterinventory', 'axetobreak', 'crate', 'fence', 'fencerestriction', 'firewall', 'remapaction', 'replaceitem']:
         assert difficulty in ['easy', 'medium', 'hard'], "difficulty must be one of 'easy', 'medium', 'hard'"
@@ -1927,5 +2039,8 @@ def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelt
     elif novelty_name == 'scatterinventory':
 
         env = ScatterInventory(env, difficulty)
-
+    elif novelty_name == 'firecraftingtable':
+        env = FireCraftingTable(env)
+    elif novelty_name == 'rubbertree':
+        env = RubberTree(env)
     return env
