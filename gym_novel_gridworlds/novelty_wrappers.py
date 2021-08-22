@@ -639,7 +639,7 @@ class AxetoBreakMedium(gym.core.Wrapper):
 
         return obs, reward, done, info
 
-class FireCraftingTable(gym.core.Wrapper):
+class FireCraftingTableEasy(gym.core.Wrapper):
     '''
     Novelty wrapper to set crafting table on fire. Add a new object called water in agent's 
     Inventory and add a new action called "spray". The agent needs to spray water on the crafting table
@@ -656,7 +656,7 @@ class FireCraftingTable(gym.core.Wrapper):
         self.env.select_actions_id.update({'Select_' + self.water_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
         self.env.actions_id.update({'Spray':len(self.env.actions_id)})
-        print("\n actions ID are: ", self.env.actions_id )
+        print("\n actions ID are: ", self.env.actions_id)
         self.action_space = spaces.Discrete(len(self.env.actions_id))
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
@@ -670,6 +670,66 @@ class FireCraftingTable(gym.core.Wrapper):
         obs = self.env.reset(reset_from_failed_state = reset_from_failed_state, env_instance = env_instance)
         self.is_crafting_table_on_fire = True   
         self.env.inventory_items_quantity.update({self.water_name: 1})
+
+        return obs
+
+    def step(self, action_id):
+
+        if action_id == self.actions_id['Craft_tree_tap'] or action_id == self.actions_id['Craft_pogo_stick']:
+            if self.is_crafting_table_on_fire == False:
+                obs, reward, done, info = self.env.step(action_id)
+                return obs, reward, done, info
+            else:
+                info = self.env.get_info()
+                info['result'] = False
+                return self.env.get_observation(), -1, False, info
+        elif action_id == self.actions_id['Spray']:
+            if self.env.selected_item == self.water_name:
+                self.is_crafting_table_on_fire = False
+                # print("selected water and sprayed")
+                # time.sleep(5)
+            info = self.env.get_info()
+            info['result'] = True
+            return self.env.get_observation(), -1, False, info
+        else:
+            obs, reward, done, info = self.env.step(action_id)
+            return obs, reward, done, info
+
+class FireCraftingTableMedium(gym.core.Wrapper):
+    '''
+    Novelty wrapper to set crafting table on fire. Add a new object called water in agent's 
+    environment and add a new action called "spray". The agent needs to spray water on the crafting table
+    to access it.
+    '''
+    def __init__(self, env):
+        super().__init__(env)
+
+        self.water_name = 'water'  # wooden_axe, iron_axe
+        # self.env.items.add(self.water_name)
+        # self.env.items_id.setdefault(self.water_name, len(self.items_id))
+        
+        self.env.add_new_items({self.water_name: 1})
+        self.env.entities.add(self.water_name)
+        self.env.items_lidar.append(self.water_name)
+        self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)
+
+        # self.env.inventory_items_quantity.update({self.water_name: 1})
+        self.env.select_actions_id.update({'Select_' + self.water_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
+        self.env.actions_id.update({'Spray':len(self.env.actions_id)})
+        print("\n actions ID are: ", self.env.actions_id)
+        self.action_space = spaces.Discrete(len(self.env.actions_id))
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
+        self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
+            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+        self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
+        
+        self.is_crafting_table_on_fire = True   
+
+    def reset(self, reset_from_failed_state = False, env_instance = None):
+        # Modified the reset function to take the arguments for resetting to the failed state. 
+        obs = self.env.reset(reset_from_failed_state = reset_from_failed_state, env_instance = env_instance)
+        self.is_crafting_table_on_fire = True   
 
         return obs
 
@@ -2040,7 +2100,10 @@ def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelt
 
         env = ScatterInventory(env, difficulty)
     elif novelty_name == 'firecraftingtable':
-        env = FireCraftingTable(env)
+        if difficulty == 'easy':
+            env = FireCraftingTableEasy(env)
+        elif difficulty == 'medium':
+            env = FireCraftingTableMedium(env)
     elif novelty_name == 'rubbertree':
         env = RubberTree(env)
     return env
