@@ -43,6 +43,7 @@ class PogostickV1Env(gym.Env):
         self.goal_item_to_craft = 'pogo_stick'
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
         self.items_quantity = {'crafting_table': 1, 'tree_log': 5}
+        self.items_quantity_at_start = {'crafting_table': 1, 'tree_log': 5} # Need to keep a constant at start state of the world for restarting the RL agent from that state
         self.inventory_items_quantity = {item: 0 for item in self.items}
         self.selected_item = ''
         self.entities = set()
@@ -94,30 +95,32 @@ class PogostickV1Env(gym.Env):
 
     def reset(self, reset_from_failed_state = False, env_instance = None):
 
-        # print("RESETTING " + self.env_id + " ...")
-        if self.env is not None:
-            print("RESTORING " + self.env_id + " ...")
-            self.map_size = copy.deepcopy(self.env.map_size)
-            self.map = copy.deepcopy(self.env.map)
-            self.items_id = copy.deepcopy(self.env.items_id)
-            self.items_quantity = copy.deepcopy(self.env.items_quantity)
-            self.inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
-            self.available_locations = copy.deepcopy(self.env.available_locations)
-            self.not_available_locations = copy.deepcopy(self.env.not_available_locations)
-            self.last_action = copy.deepcopy(self.env.last_action)  # last actions executed
-            self.step_count = copy.deepcopy(self.env.step_count)  # no. of steps taken
-            self.last_reward = copy.deepcopy(self.env.last_reward)  # last received reward
-            self.last_done = False  # last done
-            self.agent_location = copy.deepcopy(self.env.agent_location)
-            self.agent_facing_str = copy.deepcopy(self.env.agent_facing_str)
-            self.agent_facing_id = copy.deepcopy(self.env.agent_facing_id)
+        # # print("RESETTING " + self.env_id + " ...")
+        # if self.env is not None:
+        #     print("RESTORING " + self.env_id + " ...")
+        #     self.map_size = copy.deepcopy(self.env.map_size)
+        #     self.map = copy.deepcopy(self.env.map)
+        #     self.items_id = copy.deepcopy(self.env.items_id)
+        #     self.items_quantity = copy.deepcopy(self.env.items_quantity)
+        #     self.inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
+        #     self.available_locations = copy.deepcopy(self.env.available_locations)
+        #     self.not_available_locations = copy.deepcopy(self.env.not_available_locations)
+        #     self.last_action = copy.deepcopy(self.env.last_action)  # last actions executed
+        #     self.step_count = copy.deepcopy(self.env.step_count)  # no. of steps taken
+        #     self.last_reward = copy.deepcopy(self.env.last_reward)  # last received reward
+        #     self.last_done = False  # last done
+        #     self.agent_location = copy.deepcopy(self.env.agent_location)
+        #     self.agent_facing_str = copy.deepcopy(self.env.agent_facing_str)
+        #     self.agent_facing_id = copy.deepcopy(self.env.agent_facing_id)
 
-            obs = self.get_observation()
-            self.update_block_in_front()
+            
+        #     obs = self.get_observation()
+        #     self.update_block_in_front()
 
-            return obs
+        #     return obs
 
         # Variables to reset for each reset:
+        self.items_quantity = {item:self.items_quantity_at_start[item] for item in self.items_quantity_at_start} # Restart from the same 
         self.inventory_items_quantity = {item: 0 for item in self.items}
         self.selected_item = ''
         self.available_locations = []
