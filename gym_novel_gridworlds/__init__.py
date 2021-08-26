@@ -3,7 +3,6 @@ import gym_novel_gridworlds.constant
 import gym_novel_gridworlds.wrappers
 import gym_novel_gridworlds.novelty_wrappers
 import gym_novel_gridworlds.observation_wrappers
-import gym_novel_gridworlds.rapid_learn_novelty_wrapper
 
 register(
     id='NovelGridworld-v0',
