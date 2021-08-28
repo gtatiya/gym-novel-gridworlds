@@ -484,11 +484,42 @@ class AxeBreakFireCTEasy(gym.core.Wrapper):
             obs, reward, done, info = self.env.step(action_id)
             return obs, reward, done, info
 
+class ScrapePlank(gym.core.Wrapper):
+    '''
+    Novelty wrapper that fails the break action. The agent can no longer receive tree_log from the environment. 
+    The agent now has to perform ScrapePlank while being in front of a tree_log to receive plank.
+    The agent should be able to move forward in the plan.
+    '''
+    def __init__(self, env):
+        super().__init__(env)
+        self.unbreakable_items.add('tree_log')
+        self.env.actions_id.update({'Scrapeplank':len(self.env.actions_id)})
+        self.action_space = spaces.Discrete(len(self.env.actions_id))
+        
+    def step(self, action_id):
+
+        if action_id == self.actions_id['Scrapeplank']:
+            if self.env.block_in_front_str == 'tree_log':
+                block_r, block_c = self.block_in_front_location
+                self.map[block_r][block_c] = 0
+                self.inventory_items_quantity['plank'] += 4
+                reward = -1
+                info = self.env.get_info()
+                info['result'] = True
+                return self.env.get_observation(), reward, False, info     
+            else:
+                info = self.env.get_info()
+                info['result'] = False                
+                return self.env.get_observation(), -1, False, self.env.get_info()            
+        else:
+            obs, reward, done, info = self.env.step(action_id)
+            return obs, reward, done, info
+
 #################### Novelty Helper ####################
 
 def inject_novelty(env, novelty_name):
 
-    novelty_names = ['axetobreakeasy', 'axetobreakhard', 'firecraftingtableeasy','firecraftingtablehard', 'rubbertree', 'axefirecteasy']
+    novelty_names = ['axetobreakeasy', 'axetobreakhard', 'firecraftingtableeasy','firecraftingtablehard', 'rubbertree', 'axefirecteasy', 'scrapeplank']
     assert novelty_name in novelty_names, "novelty_name must be one of " + str(novelty_names)
 
     if novelty_name == 'axetobreakeasy':
@@ -503,5 +534,7 @@ def inject_novelty(env, novelty_name):
         env = RubberTree(env)
     elif novelty_name == 'axefirecteasy':
         env = AxeBreakFireCTEasy(env)
+    elif novelty_name == 'scrapeplank':
+        env = ScrapePlank(env)
         
     return env
