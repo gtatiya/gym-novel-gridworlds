@@ -57,7 +57,7 @@ class PogostickV1Env(gym.Env):
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
                         'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}},
-                        'tree_tap': {'input': {'plank': 5, 'stick': 1}, 'output': {'tree_tap': 1}}}
+                        'tree_tap': {'input': {'plank': 4, 'stick': 1}, 'output': {'tree_tap': 1}}}
         # Add a Craft action for each recipe
         self.craft_actions_id = {'Craft_' + item: len(self.actions_id) + i for i, item in
                                  enumerate(sorted(self.recipes.keys()))}
@@ -357,7 +357,6 @@ class PogostickV1Env(gym.Env):
             else:
                 result = False
                 message = 'Item not found in inventory'
-
         # Update after each step
         self.grab_entities()
         obs = self.get_observation()
@@ -706,7 +705,6 @@ class PogostickV1Env(gym.Env):
         for item in unfiltered_inventory_quantity_dict:
             if unfiltered_inventory_quantity_dict[item] > 0:
                 self.inventory_quantity_dict[item] = unfiltered_inventory_quantity_dict[item]
-
         info = {'items_locs': self.items_location.copy(), \
                 'block_in_front': self.block_in_front.copy(), \
                 'inv_quant_dict': self.inventory_quantity_dict.copy(), \
