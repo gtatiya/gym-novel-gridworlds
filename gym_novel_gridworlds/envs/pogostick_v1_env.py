@@ -53,6 +53,7 @@ class PogostickV1Env(gym.Env):
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3,
                                         'Extract_rubber': 4}
+        # self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2}                                        
         self.actions_id.update(self.manipulation_actions_id)
         self.recipes = {'pogo_stick': {'input': {'stick': 4, 'plank': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
@@ -63,7 +64,7 @@ class PogostickV1Env(gym.Env):
                                  enumerate(sorted(self.recipes.keys()))}
         self.actions_id.update(self.craft_actions_id)
         # Add a Select action for each item except unbreakable items
-        self.unselectable_items = {'crafting_table','plank','pogo_stick','rubber','stick','tree_log'}
+        self.unselectable_items = {'plank','pogo_stick','rubber','stick','tree_log'}
         self.select_actions_id = {'Select_' + item: len(self.actions_id) + i for i, item in
                                   enumerate(sorted(list(self.items ^ self.unbreakable_items ^ self.unselectable_items)))}
         self.actions_id.update(self.select_actions_id)
@@ -80,15 +81,15 @@ class PogostickV1Env(gym.Env):
         self.items_lidar = ['wall', 'crafting_table', 'tree_log']
         self.items_id_lidar = self.set_items_id(self.items_lidar)
         self.low = np.array([0] * (len(self.items_lidar) * self.num_beams) + [0] * len(self.inventory_items_quantity) + [0])
-        self.high = np.array([self.max_beam_range] * (len(self.items_lidar) * self.num_beams) + [10] * len(
-            self.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it
+        self.high = np.array([self.max_beam_range] * (len(self.items_lidar) * self.num_beams) + [40] * len(
+            self.inventory_items_quantity) + [12])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it
         self.observation_space = spaces.Box(self.low, self.high, dtype=int)
 
         # print("block in front: ", self.block_in_front_str)
         self.block_in_front = {'name':self.block_in_front_str}
         # Reward
         self.last_reward = 0  # last received reward
-        self.reward_intermediate = 10
+        self.reward_intermediate = -1
         self.reward_done = 50
 
         self.last_done = False  # last done
@@ -273,6 +274,11 @@ class PogostickV1Env(gym.Env):
         step_cost = 0  # default step_cost
         message = ''
 
+        try:
+            pre_step = self.inventory_items_quantity['water']
+        except:
+            pre_step = 0
+
         if action_id == self.actions_id['Forward']:
             if self.agent_facing_str == 'NORTH' and self.map[r - 1][c] == 0:
                 self.agent_location = (r - 1, c)
@@ -350,6 +356,7 @@ class PogostickV1Env(gym.Env):
         elif action_id in self.select_actions_id.values():
             select_action = list(self.select_actions_id.keys())[list(self.select_actions_id.values()).index(action_id)]
             item_to_select = '_'.join(select_action.split('_')[1:])
+            # print("Item to select: ", item_to_select)
 
             step_cost = 120.0
             if item_to_select in self.inventory_items_quantity and self.inventory_items_quantity[item_to_select] >= 1:
@@ -368,6 +375,13 @@ class PogostickV1Env(gym.Env):
             done = True
 
         # info = {'result': result, 'step_cost': step_cost, 'message': message}
+        try:
+            post_step = self.inventory_items_quantity['water']
+        except:
+            post_step = 0
+
+        if post_step-pre_step> 0:
+            reward = 20
 
         # Update after each step
         self.step_count += 1
@@ -450,6 +464,9 @@ class PogostickV1Env(gym.Env):
             for item in have_all_ingredients:
                 if not have_all_ingredients[item]:
                     message += str(self.recipes[item_to_craft]['input'][item]) + ' ' + item + ', '
+                # if item_to_craft == 'tree_tap':
+                #     print("Current inventory is: ", self.inventory_items_quantity)
+                #     print("Message: ", message)
             return reward, result, step_cost, message[:-2]
         # Craft
         else:
@@ -643,13 +660,17 @@ class PogostickV1Env(gym.Env):
         """
 
         lidar_signals = self.get_lidarSignal()
+        # print("Lidar signals: ", lidar_signals)
         if self.selected_item == '':
             selected_item_id = self.items_id['air']
         else:
             selected_item_id = self.items_id[self.selected_item]
+        # if self.selected_item == '':
+        #     print("selected item id: ", selected_item_id)
+        # print("selected item is: ", self.selected_item)
         observation = lidar_signals + [self.inventory_items_quantity[item] for item in
-                                       sorted(self.inventory_items_quantity)] + [selected_item_id]
-
+                                       sorted(self.inventory_items_quantity)] + [selected_item_id/len(self.items)]
+        # print("Obs in env: ", observation)
         return np.array(observation)
 
     def get_lidarSignal(self):
@@ -658,6 +679,7 @@ class PogostickV1Env(gym.Env):
         For each bean store distance (beam_range) for each item in items_id_lidar if item is found otherwise 0
         and return lidar_signals
         """
+        # print("Items lidar: ", self.items_id_lidar)
 
         direction_radian = {'NORTH': np.pi, 'SOUTH': 0, 'WEST': 3 * np.pi / 2, 'EAST': np.pi / 2}
 

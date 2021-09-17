@@ -1,5 +1,5 @@
 import copy
-
+import time
 import numpy as np
 
 import gym
@@ -235,9 +235,9 @@ class FireCraftingTableEasy(gym.core.Wrapper):
         # print("items lidar: ", self.env.items_lidar)
         self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)
         self.action_space = spaces.Discrete(len(self.env.actions_id))
-        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0]+[0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
-            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+            self.env.inventory_items_quantity) + [10] + [2])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
         # print("Observation space dim: ", self.observation_space.shape[0])
         self.is_crafting_table_on_fire = True   
@@ -245,6 +245,7 @@ class FireCraftingTableEasy(gym.core.Wrapper):
     def reset(self, reset_from_failed_state = False, env_instance = None):
         # Modified the reset function to take the arguments for resetting to the failed state. 
         obs = self.env.reset(reset_from_failed_state = reset_from_failed_state, env_instance = env_instance)
+        obs = np.append(obs,1) # 0 indicates the CT is on Fire
         self.is_crafting_table_on_fire = True   
         self.env.inventory_items_quantity.update({self.water_name: 1})
 
@@ -254,22 +255,33 @@ class FireCraftingTableEasy(gym.core.Wrapper):
 
         if action_id == self.actions_id['Craft_tree_tap'] or action_id == self.actions_id['Craft_pogo_stick']:
             if self.is_crafting_table_on_fire == False:
-                obs, reward, done, info = self.env.step(action_id)
+                obs, reward, done, info = self.env.step(action_id)  
+                obs = np.append(obs, 0) #Since the CT is NOT on Fire
                 return obs, reward, done, info
             else:
                 info = self.env.get_info()
                 info['result'] = False
-                return self.env.get_observation(), -1, False, info
+                obs = self.env.get_observation()
+                obs = np.append(obs, 1) # CT is ON Fire
+                return obs, -1, False, info
         elif action_id == self.actions_id['Spray']:
-            if self.env.selected_item == self.water_name:
+            self.env.update_block_in_front()
+            if self.env.selected_item == self.water_name and self.env.block_in_front_str == 'crafting_table':
                 self.is_crafting_table_on_fire = False
-                # print("selected water and sprayed")
-                # time.sleep(5)
+            obs = self.env.get_observation()
+            if self.is_crafting_table_on_fire == False:
+                obs = np.append(obs, 0) # CT not on Fire
+            else:
+                obs = np.append(obs, 1) # CT on Fire
             info = self.env.get_info()
             info['result'] = True
-            return self.env.get_observation(), -1, False, info
+            return obs, -1, False, info
         else:
             obs, reward, done, info = self.env.step(action_id)
+            if self.is_crafting_table_on_fire == False:
+                obs = np.append(obs, 0) # CT not on Fire
+            else:
+                obs = np.append(obs, 1) # CT on Fire
             return obs, reward, done, info
 
 class FireCraftingTableHard(gym.core.Wrapper):
@@ -294,9 +306,9 @@ class FireCraftingTableHard(gym.core.Wrapper):
         self.env.actions_id.update({'Spray':len(self.env.actions_id)})
         # print("\n actions ID are: ", self.env.actions_id)
         self.action_space = spaces.Discrete(len(self.env.actions_id))
-        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
-        self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
-            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0] + [0])
+        self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [30] * len(
+            self.env.inventory_items_quantity) + [15] + [0])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
         
         self.is_crafting_table_on_fire = True   
@@ -305,27 +317,41 @@ class FireCraftingTableHard(gym.core.Wrapper):
         # Modified the reset function to take the arguments for resetting to the failed state. 
         obs = self.env.reset(reset_from_failed_state = reset_from_failed_state, env_instance = env_instance)
         self.is_crafting_table_on_fire = True   
-
+        obs = np.append(obs,1) # 0 indicates the CT is on Fire
         return obs
 
     def step(self, action_id):
-
         if action_id == self.actions_id['Craft_tree_tap'] or action_id == self.actions_id['Craft_pogo_stick']:
             if self.is_crafting_table_on_fire == False:
+                self.env.update_block_in_front()
                 obs, reward, done, info = self.env.step(action_id)
+                obs = np.append(obs, 0) #Since the CT is NOT on Fire
                 return obs, reward, done, info
             else:
                 info = self.env.get_info()
                 info['result'] = False
-                return self.env.get_observation(), -1, False, info
+                obs = self.env.get_observation()
+                obs = np.append(obs, 1) # CT is ON Fire                
+                return obs, -1, False, info
         elif action_id == self.actions_id['Spray']:
-            if self.env.selected_item == self.water_name:
+            self.env.update_block_in_front()
+            reward = -1
+            if self.env.selected_item == self.water_name and self.env.block_in_front_str == 'crafting_table':
                 self.is_crafting_table_on_fire = False
             info = self.env.get_info()
             info['result'] = True
-            return self.env.get_observation(), -1, False, info
+            obs = self.env.get_observation()
+            if self.is_crafting_table_on_fire == False:
+                obs = np.append(obs, 0) # CT not on Fire
+            else:
+                obs = np.append(obs, 1) # CT on Fire            
+            return obs, reward, False, info
         else:
             obs, reward, done, info = self.env.step(action_id)
+            if self.is_crafting_table_on_fire == False:
+                obs = np.append(obs, 0) # CT not on Fire
+            else:
+                obs = np.append(obs, 1) # CT on Fire
             return obs, reward, done, info
 
 
@@ -394,9 +420,9 @@ class AxeBreakFireCTEasy(gym.core.Wrapper):
         self.env.actions_id.update(self.env.select_actions_id)
         self.action_space = spaces.Discrete(len(self.env.actions_id))
 
-        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0] + [0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
-            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+            self.env.inventory_items_quantity) + [10] + [2])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
 
     def reset(self, reset_from_failed_state = False, env_instance = None):
@@ -406,7 +432,7 @@ class AxeBreakFireCTEasy(gym.core.Wrapper):
         self.env.inventory_items_quantity.update({self.axe_name: 1})
         self.is_crafting_table_on_fire = True   
         self.env.inventory_items_quantity.update({self.water_name: 1})
-
+        obs = np.append(obs,1) # 0 indicates the CT is on Fire
         return obs
 
     def step(self, action_id):
@@ -467,21 +493,31 @@ class AxeBreakFireCTEasy(gym.core.Wrapper):
         elif action_id == self.actions_id['Craft_tree_tap'] or action_id == self.actions_id['Craft_pogo_stick']:
             if self.is_crafting_table_on_fire == False:
                 obs, reward, done, info = self.env.step(action_id)
+                obs = np.append(obs, 0) #Since the CT is NOT on Fire                
                 return obs, reward, done, info
             else:
                 info = self.env.get_info()
                 info['result'] = False
+                obs = self.env.get_observation()
+                obs = np.append(obs, 1) # CT is ON Fire                                
                 return self.env.get_observation(), -1, False, info
         elif action_id == self.actions_id['Spray']:
-            if self.env.selected_item == self.water_name:
+            if self.env.selected_item == self.water_name and self.env.block_in_front_str == 'crafting_table':
                 self.is_crafting_table_on_fire = False
-                # print("selected water and sprayed")
-                # time.sleep(5)
+            obs = self.env.get_observation()
+            if self.is_crafting_table_on_fire == False:
+                obs = np.append(obs, 0) # CT not on Fire
+            else:
+                obs = np.append(obs, 1) # CT on Fire            
             info = self.env.get_info()
             info['result'] = True
             return self.env.get_observation(), -1, False, info
         else:
             obs, reward, done, info = self.env.step(action_id)
+            if self.is_crafting_table_on_fire == False:
+                obs = np.append(obs, 0) # CT not on Fire
+            else:
+                obs = np.append(obs, 1) # CT on Fire                        
             return obs, reward, done, info
 
 class ScrapePlank(gym.core.Wrapper):
