@@ -130,6 +130,8 @@ class AxetoBreakHard(gym.core.Wrapper):
         self.env.items_quantity_at_start.update({self.axe_name:1}) # need to update the novel item at the start
         self.env.select_actions_id.update({'Select_' + self.axe_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
+        self.env.hierarchical_actions.update({'Approach ' + self.axe_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.hierarchical_actions)
         self.env.items_lidar.append(self.axe_name)
         self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)
         self.action_space = spaces.Discrete(len(self.env.actions_id))
@@ -304,6 +306,8 @@ class FireCraftingTableHard(gym.core.Wrapper):
         self.env.select_actions_id.update({'Select_' + self.water_name: len(self.env.actions_id)})
         self.env.actions_id.update(self.env.select_actions_id)
         self.env.actions_id.update({'Spray':len(self.env.actions_id)})
+        self.env.hierarchical_actions.update({'Approach ' + self.water_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.hierarchical_actions)        
         # print("\n actions ID are: ", self.env.actions_id)
         self.action_space = spaces.Discrete(len(self.env.actions_id))
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0] + [0])
