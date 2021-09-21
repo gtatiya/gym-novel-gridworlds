@@ -372,6 +372,8 @@ class RubberTree(gym.core.Wrapper):
         self.env.items_lidar.append(self.rubber_tree_name)
         self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)
         self.env.unselectable_items.add(self.rubber_tree_name)
+        self.env.hierarchical_actions.update({'Approach ' + self.rubber_tree_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.hierarchical_actions)                        
         self.env.inventory_items_quantity.update({self.rubber_tree_name:0})
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
