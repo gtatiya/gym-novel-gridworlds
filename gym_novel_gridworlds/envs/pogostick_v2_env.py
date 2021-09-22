@@ -23,14 +23,14 @@ class PogostickV2Env(gym.Env):
             Craft action for each recipe, Select action for each item except unbreakable items}
     """
 
-    def __init__(self, env=None):
+    def __init__(self, env=None, seed=None):
         # PogostickV2Env attributes
         self.env_id = 'NovelGridworld-Pogostick-v2'
         self.env = env  # env to restore in reset
-        self.map_size = 12
-        self.spawnroom_size = (9,7)
-        self.spawnroom_side = 'EAST'    # NOTE not currently implemented
+        self.map_size = 32
+        self.seed()
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
+        self.mainroom_bounds = np.array([[2, self.map_size - 2], [2, self.map_size - 2]])
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
         self.agent_facing_str = 'NORTH'
@@ -38,31 +38,37 @@ class PogostickV2Env(gym.Env):
         self.block_in_front_str = 'air'
         self.block_in_front_id = 0  # air
         self.block_in_front_location = (0, 0)  # row, column
-        self.items = {'air', 'crafting_table', 'plank', 'pogo_stick', 'rubber', 'stick', 'tree_log', 'tree_tap', 'wall', 'door', 'safe', 'chest', 'diamond', 'diamond_block', 'titanium_block', 'key', 'iron_pickaxe'}
+        self.rival_location = (1, 1)
+        self.rival_facing_str = 'NORTH'
+        self.rival_facing_id = self.direction_id[self.rival_facing_str]
+        self.rival_acted_last = True
+        self.items = {'air', 'crafting_table', 'plank', 'pogo_stick', 'rubber', 'stick', 'tree_log', 'tree_tap', 'wall', 'door', 'safe', 'unlocked_safe', 'chest', 'diamond', 'diamond_ore', 'block_of_diamond', 'block_of_titanium', 'block_of_platinum', 'key', 'iron_pickaxe', \
+                      'trader1', 'trader2'}
         self.items_id = self.set_items_id(self.items)  # {'crafting_table': 1, 'plank': 2, ...}  # air's ID is 0
-        self.unbreakable_items = {'air', 'wall', 'safe', 'door'}
+        self.pickaxe_req_items = {'diamond_ore', 'block_of_platinum'}
+        self.unbreakable_items = {'air', 'wall', 'safe', 'unlocked_safe', 'door', 'trader1', 'trader2'}
         self.goal_item_to_craft = 'pogo_stick'
         # items_quantity when the episode starts, do not include wall, quantity must be more than 0
-        self.items_quantity = {'crafting_table': 1, 'tree_log': 7, 'chest': 1, 'diamond_block': 0, 'titanium_block': 4, 'chest': 1}
-        self.spawnroom_items_quantity = {'safe': 1}
+        self.items_quantity = {'crafting_table': 1, 'tree_log': 7, 'diamond_ore': 4, 'block_of_platinum': 4, 'chest': 1, 'trader1': 1, 'trader2': 1}
+        self.secondary_room_items_quantity = {'safe': 1}
         self.inventory_items_quantity = {item: 0 for item in self.items}
         self.inventory_items_quantity['iron_pickaxe'] = 1
         self.selected_item = ''
         self.entities = set()
         self.available_locations = []  # locations that do not have item placed
-        self.spawnroom_available_locations = []
+        self.secondary_room_available_locations = []
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
 
         # Action Space
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4,
-                                        'Collect': 5, 'Use': 6}
+                                        'Collect': 5, 'Use': 6, 'Interact': 7}
         self.actions_id.update(self.manipulation_actions_id)
-        self.recipes = {'pogo_stick': {'input': {'stick': 2, 'titanium_block': 2, 'diamond_block': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
+        self.recipes = {'pogo_stick': {'input': {'stick': 2, 'block_of_titanium': 2, 'block_of_diamond': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
                         'plank': {'input': {'tree_log': 1}, 'output': {'plank': 4}},
                         'tree_tap': {'input': {'plank': 5, 'stick': 1}, 'output': {'tree_tap': 1}},
-                        'diamond_block': {'input': {'diamond': 9}, 'output': {'diamond_block': 1}}}
+                        'block_of_diamond': {'input': {'diamond': 9}, 'output': {'block_of_diamond': 1}}}
         # Add a Craft action for each recipe
         self.craft_actions_id = {'Craft_' + item: len(self.actions_id) + i for i, item in
                                  enumerate(sorted(self.recipes.keys()))}
@@ -71,17 +77,29 @@ class PogostickV2Env(gym.Env):
         self.select_actions_id = {'Select_' + item: len(self.actions_id) + i for i, item in
                                   enumerate(sorted(list(set(['']) ^ self.items ^ self.unbreakable_items)))}
         self.actions_id.update(self.select_actions_id)
+
+        self.trades = [ {'inputs': {'block_of_platinum': 2}, 'outputs': {'diamond': 9}},
+                        {'inputs': {'block_of_platinum': 1}, 'outputs': {'block_of_titanium': 1}},
+                        {'inputs': {'wood_log': 10}, 'outputs': {'block_of_titanium': 1}},
+                        {'inputs': {'diamond': 18}, 'outputs': {'block_of_platinum': 1}}]
+        self.trade_actions_id = {'Trade_' + list(tr['inputs'].keys())[0] + '_' + str(list(tr['inputs'].values())[0]): len(self.actions_id) + i for i, tr in enumerate(self.trades)}
+        self.actions_id.update(self.trade_actions_id)
+
         self.action_space = spaces.Discrete(len(self.actions_id))
+
+        trader1_indices = self.np_random.choice(4, size=2, replace=False)
+        self.trader_trades = [[self.trades[i] for i in trader1_indices], [self.trades[j] for j in range(len(self.trades)) if j not in trader1_indices]]
 
         self.last_action = 'Forward'  # last actions executed
         self.step_count = 0  # no. of steps taken
         self.last_step_cost = 0  # last received step_cost
 
         # Edit map
-        self.map = self.add_room(self.spawnroom_size, self.spawnroom_side)
+        # self.map = self.add_room(self.spawnroom_size, self.spawnroom_side)
+        self.map = self.add_rooms()
 
         # Observation Space
-        self.max_items = 20
+        self.max_items = 25
         self.observation_space = spaces.Box(low=0, high=self.max_items, shape=(self.map.shape[0], self.map.shape[1], 1))
         self.observation_space = spaces.Dict({'map': self.observation_space})
 
@@ -92,21 +110,20 @@ class PogostickV2Env(gym.Env):
 
         self.last_done = False  # last done
 
-    def reset(self, map_size=None, items_id=None, items_quantity=None, spawnroom_items_quantity=None):
+    def reset(self, map_size=None, items_id=None, items_quantity=None, secondary_room_items_quantity=None):
 
         # print("RESETTING " + self.env_id + " ...")
         if self.env is not None:
             print("RESTORING " + self.env_id + " ...")
             self.map_size = copy.deepcopy(self.env.map_size)
-            self.spawnroom_size = copy.deepcopy(self.env.spawnroom_size)
-            self.spawnroom_side = copy.deepcopy(self.env.spawnroom_side)
             self.map = copy.deepcopy(self.env.map)
+            self.np_random = copy.deepcopy(self.env.np_random)
             self.items_id = copy.deepcopy(self.env.items_id)
             self.items_quantity = copy.deepcopy(self.env.items_quantity)
-            self.spawnroom_items_quantity = copy.deepcopy(self.env.spawnroom_items_quantity)
+            self.secondary_room_items_quantity = copy.deepcopy(self.env.secondary_room_items_quantity)
             self.inventory_items_quantity = copy.deepcopy(self.env.inventory_items_quantity)
             self.available_locations = copy.deepcopy(self.env.available_locations)
-            self.spawnroom_available_locations = copy.deepcopy(self.env.spawnroom_available_locations)
+            self.secondary_room_available_locations = copy.deepcopy(self.env.secondary_room_available_locations)
             self.not_available_locations = copy.deepcopy(self.env.not_available_locations)
             self.last_action = copy.deepcopy(self.env.last_action)  # last actions executed
             self.step_count = copy.deepcopy(self.env.step_count)  # no. of steps taken
@@ -115,6 +132,10 @@ class PogostickV2Env(gym.Env):
             self.agent_location = copy.deepcopy(self.env.agent_location)
             self.agent_facing_str = copy.deepcopy(self.env.agent_facing_str)
             self.agent_facing_id = copy.deepcopy(self.env.agent_facing_id)
+            self.rival_location = copy.deepcopy(self.env.rival_location)
+            self.rival_facing_str = copy.deepcopy(self.env.rival_facing_str)
+            self.rival_facing_id = copy.deepcopy(self.env.rival_facing_id)
+            self.rival_acted_last = copy.deepcopy(self.env.rival_acted_last)
 
             obs = self.get_observation()
             self.update_block_in_front()
@@ -127,56 +148,61 @@ class PogostickV2Env(gym.Env):
             self.items_id = items_id
         if items_quantity is not None:
             self.items_quantity = items_quantity
-        if spawnroom_items_quantity is not None:
-            self.spawnroom_items_quantity = spawnroom_items_quantity
+        if secondary_room_items_quantity is not None:
+            self.secondary_room_items_quantity = secondary_room_items_quantity
 
         # Variables to reset for each reset:
         self.inventory_items_quantity = {item: 0 for item in self.items}
         self.inventory_items_quantity['iron_pickaxe'] = 1
         self.selected_item = ''
+        self.mainroom_bounds = np.array([[2, self.map_size - 2], [2, self.map_size - 2]])
         self.available_locations = []
-        self.spawnroom_available_locations = []
+        self.secondary_room_available_locations = []
         self.not_available_locations = []
         self.last_action = 'Forward'  # last actions executed
         self.step_count = 0  # no. of steps taken
         self.last_step_cost = 0  # last received step_cost
         self.last_reward = 0  # last received reward
         self.last_done = False  # last done
+        self.rival_acted_last = False
 
         self.map = np.zeros((self.map_size - 2, self.map_size - 2), dtype=int)  # air=0
         self.map = np.pad(self.map, pad_width=1, mode='constant', constant_values=self.items_id['wall'])
-        self.map = self.add_room(self.spawnroom_size, self.spawnroom_side)
+        # self.map = self.add_room(self.spawnroom_size, self.spawnroom_side)
+        self.map = self.add_rooms()
 
         """
         available_locations: locations 1 block away from the wall are valid locations to place items and agent
         available_locations: locations that do not have item placed
         """
-        for r in range(2, self.map_size - 2):
-            for c in range(2, self.map_size - 2):
+        for r in range(self.mainroom_bounds[0][0], self.mainroom_bounds[0][1]):
+            for c in range(self.mainroom_bounds[1][0], self.mainroom_bounds[1][1]):
                 self.available_locations.append((r, c))
 
         # Agent
-        idx = np.random.choice(len(self.available_locations), size=1)[0]
+        idx = self.np_random.choice(len(self.available_locations), size=1)[0]
         self.agent_location = self.available_locations[idx]
 
-        # Phase 2 spawns in spawnroom
-        for r in range(2, self.spawnroom_size[0] - 2):
-            for c in range(self.map_size + 1, self.map_size + self.spawnroom_size[1] - 1):
-                self.spawnroom_available_locations.append((r, c))
-        # idx = np.random.choice(len(self.spawnroom_available_locations))
-        # self.agent_location = self.spawnroom_available_locations[idx]
-
         # Agent facing direction
-        self.set_agent_facing(direction_str=np.random.choice(list(self.direction_id.keys()), size=1)[0])
+        self.set_agent_facing(direction_str=self.np_random.choice(list(self.direction_id.keys()), size=1)[0])
+
+        # Rival
+        idx = self.np_random.choice(len(self.available_locations), size=1)[0]
+        self.rival_location = self.available_locations[idx]
 
         for item, quantity in self.items_quantity.items():
             self.add_item_to_map(item, num_items=quantity)
 
-        for item, quantity in self.spawnroom_items_quantity.items():
+        for item, quantity in self.secondary_room_items_quantity.items():
             self.add_item_to_spawnroom(item, num_items=quantity)
 
         if self.agent_location not in self.available_locations:
             self.available_locations.append(self.agent_location)
+
+        if self.rival_location not in self.available_locations:
+            self.available_locations.append(self.rival_location)
+
+
 
         # Update after each reset
         obs = self.get_observation()
@@ -184,21 +210,91 @@ class PogostickV2Env(gym.Env):
 
         return obs
 
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
 
-    def add_room(self, room_size, side):
-        # NOTE side currently unused, default EAST
-        assert room_size[0] <= self.map.shape[0], "Secondary rooms must not have larger dimensions than the main map"
-        room = np.full((max(self.map.shape[0], room_size[0]) , room_size[1]), self.items_id['wall'])
-        room[1:1 + room_size[0] - 2, 1:1 + room_size[1] - 2] = 0
-        room[room_size[0]:, :] = 0
+    def add_room(self, room_size, side, start_loc):
+        # NOTE this is a bit of a hack, but with current setup shouldn't matter
+        # Items will only spawn in last added room (simplifies location calculations)
+        self.secondary_room_available_locations = []
 
-        new_map = np.concatenate((self.map, room), 1)
+        assert room_size[0] <= self.map.shape[0] and room_size[1] <= self.map.shape[1], "Secondary rooms must not have larger dimensions than the main map"
+        if side == 'NORTH' or side == 'SOUTH':
+            adjusted_start_loc = self.mainroom_bounds[1][0] - 2 + start_loc
 
-        # Add doorway
-        new_map[2, self.map.shape[1] - 1] = self.items_id['door']
-        new_map[2, self.map.shape[1]] = 0
+            room = np.full((room_size[0], max(self.map.shape[1], room_size[1])), self.items_id['wall'])
+            room[:, adjusted_start_loc + room_size[1]:] = 0
+            room[:, :adjusted_start_loc] = 0
+            room[1:1 + room_size[0] - 2, 1 + adjusted_start_loc:1 + adjusted_start_loc + room_size[1] - 2] = 0
+
+        elif side == 'EAST' or side == 'WEST':
+            adjusted_start_loc = self.mainroom_bounds[0][0] - 2 + start_loc
+
+            room = np.full((max(self.map.shape[0], room_size[0]), room_size[1]), self.items_id['wall'])
+            room[adjusted_start_loc + room_size[0]:, :] = 0
+            room[:adjusted_start_loc, :] = 0
+            room[1 + adjusted_start_loc:1 + adjusted_start_loc + room_size[0] - 2, 1:1 + room_size[1] - 2] = 0
+
+        if side == 'NORTH':
+            new_map = np.concatenate((room, self.map), axis=0)
+
+            self.mainroom_bounds[0] += room_size[0]
+            # Add doorway
+            new_map[room_size[0], adjusted_start_loc + 2] = self.items_id['door']
+            new_map[room_size[0] - 1, adjusted_start_loc + 2] = 0
+
+            # Phase 2 spawns in spawnroom
+            for r in range(2, room_size[0] - 2):
+                for c in range(adjusted_start_loc + 1, adjusted_start_loc + room_size[1] - 2):
+                    self.secondary_room_available_locations.append((r, c))
+        elif side == 'SOUTH':
+            new_map = np.concatenate((self.map, room), axis=0)
+            # Add doorway
+            new_map[self.map.shape[0] - 1, adjusted_start_loc + 2] = self.items_id['door']
+            new_map[self.map.shape[0],     adjusted_start_loc + 2] = 0
+
+            for r in range(self.map.shape[0] + 2, self.map.shape[0] + room_size[0] - 2):
+                for c in range(adjusted_start_loc + 1, adjusted_start_loc + room_size[1] - 2):
+                    self.secondary_room_available_locations.append((r, c))
+        elif side == 'EAST':
+            new_map = np.concatenate((self.map, room), axis=1)
+            # Add doorway
+            new_map[adjusted_start_loc + 2, self.map.shape[1] - 1] = self.items_id['door']
+            new_map[adjusted_start_loc + 2, self.map.shape[1]] = 0
+
+            for r in range(adjusted_start_loc + 2, adjusted_start_loc + room_size[0] - 2):
+                for c in range(self.map.shape[1] + 2, self.map.shape[1] + room_size[1] - 2):
+                    self.secondary_room_available_locations.append((r, c))
+        elif side == 'WEST':
+            new_map = np.concatenate((room, self.map), axis=1)
+            # Add doorway
+            new_map[adjusted_start_loc + 2, room_size[1]] = self.items_id['door']
+            new_map[adjusted_start_loc + 2, room_size[1] - 1] = 0
+
+            self.mainroom_bounds[1] += room_size[1]
+
+            for r in range(adjusted_start_loc + 2, adjusted_start_loc + room_size[0] - 2):
+                for c in range(2, room_size[1] - 2):
+                    self.secondary_room_available_locations.append((r, c))
+
+
 
         return new_map
+
+    def add_rooms(self):
+        num_to_add = self.np_random.randint(1, 3)  # Either one or two
+        sides = self.np_random.choice(['NORTH', 'EAST', 'SOUTH', 'WEST'], size=num_to_add, replace=False)
+
+        max_dim = self.map_size / 2     # TODO secondary room sizes are just said to be "variable [...] but significantly smaller than the main room" - for now, max of half
+        sizes = [(self.np_random.randint(5, max_dim + 1), self.np_random.randint(5, max_dim + 1)) for room in range(num_to_add)]
+        start_locs = [self.np_random.randint(0, self.map_size - max_dim) for room in range(num_to_add)]
+
+        for room in range(num_to_add):
+            self.map = self.add_room(sizes[room], sides[room], start_locs[room])
+
+        return self.map #TODO clean
+
 
     def add_item_to_map(self, item, num_items):
 
@@ -210,7 +306,7 @@ class PogostickV2Env(gym.Env):
                 break
             assert not len(self.available_locations) < 1, "Cannot place items, increase map size!"
 
-            idx = np.random.choice(len(self.available_locations), size=1)[0]
+            idx = self.np_random.choice(len(self.available_locations), size=1)[0]
             r, c = self.available_locations[idx]
 
             if (r, c) == self.agent_location:
@@ -232,10 +328,10 @@ class PogostickV2Env(gym.Env):
         while True:
             if num_items == count:
                 break
-            assert not len(self.spawnroom_available_locations) < 1, "Cannot place items, increase spawnroom size!"
+            assert not len(self.secondary_room_available_locations) < 1, "Cannot place items, increase spawnroom size!"
 
-            idx = np.random.choice(len(self.spawnroom_available_locations), size=1)[0]
-            r, c = self.spawnroom_available_locations[idx]
+            idx = self.np_random.choice(len(self.secondary_room_available_locations), size=1)[0]
+            r, c = self.secondary_room_available_locations[idx]
 
             # Vestige from add_item_to_map - unknown if necessary
             if (r, c) == self.agent_location:
@@ -247,7 +343,7 @@ class PogostickV2Env(gym.Env):
                     self.map[r][c - 1] == 0) and (self.map[r][c + 1] == 0):
                 self.map[r][c] = item_id
                 count += 1
-            self.not_available_locations.append(self.spawnroom_available_locations.pop(idx))
+            self.not_available_locations.append(self.secondary_room_available_locations.pop(idx))
 
     def set_agent_location(self, r, c):
 
@@ -257,6 +353,10 @@ class PogostickV2Env(gym.Env):
 
         self.agent_facing_str = direction_str
         self.agent_facing_id = self.direction_id[self.agent_facing_str]
+
+    def set_rival_facing(self, direction_str):
+        self.rival_facing_str = direction_str
+        self.rival_facing_id = self.direction_id[self.rival_facing_str]
 
     def set_lasts(self, lasts):
 
@@ -349,7 +449,18 @@ class PogostickV2Env(gym.Env):
         elif action_id == self.actions_id['Break']:
             self.update_block_in_front()
             # If block in front is not air and wall, place the block in front in inventory
-            if self.block_in_front_str not in self.unbreakable_items:
+            if self.block_in_front_str in self.pickaxe_req_items:
+                if self.selected_item == 'iron_pickaxe':
+                    block_r, block_c = self.block_in_front_location
+                    self.map[block_r][block_c] = 0
+                    if self.block_in_front_str == 'diamond_ore' :
+                        self.inventory_items_quantity['diamond'] += 9
+                    else:
+                        self.inventory_items_quantity[self.block_in_front_str] += 1
+                else:
+                    result = False
+                    message = f"Cannot break {self.block_in_front_str} without a pickaxe"
+            elif self.block_in_front_str not in self.unbreakable_items:
                 block_r, block_c = self.block_in_front_location
                 self.map[block_r][block_c] = 0
                 self.inventory_items_quantity[self.block_in_front_str] += 1
@@ -398,6 +509,9 @@ class PogostickV2Env(gym.Env):
             elif self.block_in_front_str == 'chest':
                 self.inventory_items_quantity['key'] += 1
                 step_cost = 1200.0
+            elif self.block_in_front_str == 'unlocked_safe':
+                self.inventory_items_quantity['diamond'] += 18
+                step_cost = 1200.0 #TODO unknown step cost
             else:
                 result = False
                 message = "Can't collect from " + self.block_in_front_str
@@ -409,7 +523,8 @@ class PogostickV2Env(gym.Env):
                 self.map[block_r][block_c] = 0
             elif self.block_in_front_str == 'safe':
                 if self.selected_item == 'key':
-                    self.inventory_items_quantity['diamond'] += 18
+                    block_r, block_c = self.block_in_front_location
+                    self.map[block_r][block_c] = self.items_id['unlocked_safe']
                 else:
                     result = False
                     message = "Cannot use safe with " + self.selected_item + " selected"
@@ -418,7 +533,15 @@ class PogostickV2Env(gym.Env):
                 message = "Cannot use " + self.block_in_front_str
 
             step_cost = 0.0 #TODO unknown step cost
+        elif action_id == self.actions_id['Interact']:
+            self.update_block_in_front()
 
+            if self.block_in_front_str.startswith('trader'):
+                message = str(self.trader_trades[int(self.block_in_front_str[-1]) - 1])
+            else:
+                result = False
+                message = "Cannot interact with " + self.block_in_front_str
+            step_cost = 0.0
         # Craft
         elif action_id in self.craft_actions_id.values():
             craft_action = list(self.craft_actions_id.keys())[list(self.craft_actions_id.values()).index(action_id)]
@@ -435,6 +558,54 @@ class PogostickV2Env(gym.Env):
             else:
                 result = False
                 message = 'Item not found in inventory'
+        # Trade
+        elif action_id in self.trade_actions_id.values():
+            trade_action = list(self.trade_actions_id.keys())[list(self.trade_actions_id.values()).index(action_id)]
+
+            # item_to_trade = '_'.join(trade_action.split('_')[2:-1])   # TODO need to distinguish based on ID
+            item_to_trade = '_'.join(trade_action.split('_')[1:-1])
+            num_to_trade  = int(trade_action.split('_')[-1])
+
+            if not (item_to_trade in self.inventory_items_quantity and self.inventory_items_quantity[item_to_trade] >= num_to_trade):
+                result = False
+                message = f'Not enough {item_to_trade} in inventory'
+
+            elif item_to_trade == 'block_of_platinum' and num_to_trade == 1:
+                self.inventory_items_quantity['block_of_platinum'] -= 1
+                self.inventory_items_quantity['block_of_titanium'] += 1
+            elif item_to_trade == 'tree_log' and num_to_trade == 10:
+                self.inventory_items_quantity['wood_log'] -= 10
+                self.inventory_items_quantity['block_of_titanium'] += 1
+            elif item_to_trade == 'block_of_platinum' and num_to_trade == 2:
+                self.inventory_items_quantity['block_of_platinum'] -= 2
+                self.inventory_items_quantity['diamond'] += 9
+            elif item_to_trade == 'diamond' and num_to_trade == 18:
+                self.inventory_items_quantity['diamond'] -= 18
+                self.inventory_items_quantity['block_of_platinum'] += 1
+
+
+
+        # Rival moves every other step
+        if self.rival_acted_last:
+            self.rival_acted_last = False
+        else:
+            move_dir_str = self.np_random.choice(['NORTH', 'EAST', 'SOUTH', 'WEST'])
+            self.set_rival_facing(move_dir_str)
+            self.rival_acted_last = True
+
+            r, c = self.rival_location
+            if move_dir_str == 'NORTH':
+                if self.map[r - 1][c] == 0:
+                    self.rival_location = (r - 1, c)
+            elif move_dir_str == 'EAST':
+                if self.map[r][c + 1] == 0:
+                    self.rival_location = (r, c + 1)
+            elif move_dir_str == 'SOUTH':
+                if self.map[r + 1][c] == 0:
+                    self.rival_location = (r + 1, c)
+            elif move_dir_str == 'WEST':
+                if self.map[r][c - 1] == 0:
+                    self.rival_location = (r, c - 1)
 
         # Update after each step
         self.grab_entities()
@@ -571,7 +742,7 @@ class PogostickV2Env(gym.Env):
 
         while True:
             actions = list(actions_id.keys())
-            np.random.shuffle(actions)
+            self.np_random.shuffle(actions)
             actions_id_new = {actions[i - start_action_id]: i for i in
                               range(start_action_id, start_action_id + len(actions))}
 
@@ -650,6 +821,9 @@ class PogostickV2Env(gym.Env):
         if title is None:
             title = self.env_id
 
+        plt.figure(title, figsize=(14.5, 9.5))
+        plt.imshow(self.map, cmap=color_map, vmin=0, vmax=len(self.items_id))
+
         r, c = self.agent_location
         x2, y2 = 0, 0
         if self.agent_facing_str == 'NORTH':
@@ -661,9 +835,23 @@ class PogostickV2Env(gym.Env):
         elif self.agent_facing_str == 'EAST':
             x2, y2 = 0.01, 0
 
-        plt.figure(title, figsize=(9, 5))
-        plt.imshow(self.map, cmap=color_map, vmin=0, vmax=len(self.items_id))
         plt.arrow(c, r, x2, y2, head_width=0.7, head_length=0.7, color='white')
+
+        r, c = self.rival_location
+        x2, y2 = 0, 0
+        if self.rival_facing_str == 'NORTH':
+            x2, y2 = 0, -0.01
+        elif self.rival_facing_str == 'SOUTH':
+            x2, y2 = 0, 0.01
+        elif self.rival_facing_str == 'WEST':
+            x2, y2 = -0.01, 0
+        elif self.rival_facing_str == 'EAST':
+            x2, y2 = 0.01, 0
+
+        plt.arrow(c, r, x2, y2, head_width=0.7, head_length=0.7, color='black', ec='white')
+
+
+
         plt.title('NORTH', fontsize=10)
         plt.xlabel('SOUTH')
         plt.ylabel('WEST')

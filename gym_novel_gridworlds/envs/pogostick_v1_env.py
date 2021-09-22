@@ -23,7 +23,7 @@ class PogostickV1Env(gym.Env):
             Craft action for each recipe, Select action for each item except unbreakable items}
     """
 
-    def __init__(self, env=None):
+    def __init__(self, env=None, seed=None):
         # PogostickV1Env attributes
         self.env_id = 'NovelGridworld-Pogostick-v1'
         self.env = env  # env to restore in reset
@@ -47,6 +47,8 @@ class PogostickV1Env(gym.Env):
         self.entities = set()
         self.available_locations = []  # locations that do not have item placed
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
+
+        self.seed()
 
         # Action Space
         self.actions_id = dict()
@@ -138,11 +140,11 @@ class PogostickV1Env(gym.Env):
                 self.available_locations.append((r, c))
 
         # Agent
-        idx = np.random.choice(len(self.available_locations), size=1)[0]
+        idx = self.np_random.choice(len(self.available_locations), size=1)[0]
         self.agent_location = self.available_locations[idx]
 
         # Agent facing direction
-        self.set_agent_facing(direction_str=np.random.choice(list(self.direction_id.keys()), size=1)[0])
+        self.set_agent_facing(direction_str=self.np_random.choice(list(self.direction_id.keys()), size=1)[0])
 
         for item, quantity in self.items_quantity.items():
             self.add_item_to_map(item, num_items=quantity)
@@ -156,6 +158,10 @@ class PogostickV1Env(gym.Env):
 
         return obs
 
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+
     def add_item_to_map(self, item, num_items):
 
         item_id = self.items_id[item]
@@ -166,7 +172,7 @@ class PogostickV1Env(gym.Env):
                 break
             assert not len(self.available_locations) < 1, "Cannot place items, increase map size!"
 
-            idx = np.random.choice(len(self.available_locations), size=1)[0]
+            idx = self.np_random.choice(len(self.available_locations), size=1)[0]
             r, c = self.available_locations[idx]
 
             if (r, c) == self.agent_location:
@@ -481,7 +487,7 @@ class PogostickV1Env(gym.Env):
 
         while True:
             actions = list(actions_id.keys())
-            np.random.shuffle(actions)
+            self.np_random.shuffle(actions)
             actions_id_new = {actions[i - start_action_id]: i for i in
                               range(start_action_id, start_action_id + len(actions))}
 

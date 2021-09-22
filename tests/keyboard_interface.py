@@ -11,8 +11,12 @@ from gym_novel_gridworlds.novelty_wrappers import *
 import keyboard
 import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams['keymap.quit'].pop(plt.rcParams['keymap.quit'].index('q'))
+# plt.rcParams['keymap.quit'].pop(plt.rcParams['keymap.quit'].index('q'))
 
+# More heavy-handed, but with larger action spaces there are more conflicts
+for k in plt.rcParams.keys():
+    if k.startswith('keymap'):
+        plt.rcParams[k].clear()
 
 def assign_keys(env_):
 
@@ -26,7 +30,7 @@ def assign_keys(env_):
             return key_action_id_dict
 
     actions_key = {'Forward': 'w', 'Left': 'a', 'Right': 'd', 'Break': 'e', 'Chop': 'q', 'Jump': 'space',
-                    'Place_tree_tap': 'z', 'Extract_rubber': 'x', 'Extract_string': 'x', 'Collect': 'x', 'Use': 'c'}
+                    'Place_tree_tap': 'z', 'Extract_rubber': 'x', 'Extract_string': 'x', 'Collect': 'x', 'Use': 'c', 'Interact': 'i'}
 
     if env_.env_id in ['NovelGridworld-v6', 'NovelGridworld-Bow-v0', 'NovelGridworld-Bow-v1', 'NovelGridworld-Pogostick-v0', 'NovelGridworld-Pogostick-v1', 'NovelGridworld-Pogostick-v2']:
         key_action_id_dict = {}
@@ -42,6 +46,22 @@ def assign_keys(env_):
 
         alpha_keys = 'abcdefghijklmnopqrstuvwxyz'
         alpha_keys_idx = 0
+
+        for action in sorted(env_.trade_actions_id):
+            if action not in actions_id:
+                continue
+            while True:
+                if alpha_keys_idx < len(alpha_keys):
+                    if alpha_keys[alpha_keys_idx] not in key_action_id_dict:
+                        key_action_id_dict[alpha_keys[alpha_keys_idx]] = actions_id[action]
+                        alpha_keys_idx += 1
+                        break
+                    else:
+                        alpha_keys_idx += 1
+                else:
+                    print("No keys left to assign")
+                    break
+
         for action in sorted(env_.select_actions_id):
             if action not in actions_id:
                 continue

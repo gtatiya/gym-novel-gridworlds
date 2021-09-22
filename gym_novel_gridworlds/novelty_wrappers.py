@@ -844,6 +844,84 @@ class AxetoBreakHard(gym.core.Wrapper):
             return reward, result, step_cost, message
 
 
+class CoinCraft(gym.core.Wrapper):
+    """
+    Novelty wrapper to require coins to craft; coins are generated on the map and
+    must be picked up. Each craft action takes one coin, and cannot be performed with no coins
+    """
+
+    def __init__(self, env, difficulty):
+        super().__init__(env)
+
+        if self.env.map_size > 10 :
+            self.num_coins = 10
+        else :
+            self.num_coins = 7
+
+        self.coin_name = 'coin'
+
+        self.env.add_new_items({self.coin_name: self.num_coins})
+        self.env.entities.add(self.coin_name)
+        self.env.select_actions_id.update({'Select_' + self.coin_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.select_actions_id)
+
+    def step(self, action_id):
+
+        if action_id in self.env.craft_actions_id.values():
+            craft_action = list(self.env.craft_actions_id.keys())[list(self.env.craft_actions_id.values()).index(action_id)]
+            item_to_craft = '_'.join(craft_action.split('_')[1:])
+            reward, result, step_cost, message = self.craft(item_to_craft)
+
+            self.env.last_action = list(self.actions_id.keys())[list(self.actions_id.values()).index(action_id)]
+
+            # Update after each step
+            self.env.grab_entities()
+            if hasattr(self, 'observation'):
+                obs = self.observation()
+            else:
+                obs = self.env.get_observation()
+            self.env.update_block_in_front()
+
+            done = False
+            if self.env.inventory_items_quantity[self.goal_item_to_craft] >= 1:
+                reward = self.reward_done
+                done = True
+
+            info = {'result': result, 'step_cost': step_cost, 'message': message}
+
+            # Update after each step
+            self.env.step_count += 1
+            self.env.last_step_cost = step_cost
+            self.env.last_reward = reward
+            self.env.last_done = done
+
+            lasts = {'last_action': self.env.last_action, 'step_count': self.env.step_count,
+                     'last_step_cost': self.env.last_step_cost, 'last_reward': self.env.last_reward,
+                     'last_done': self.env.last_done}
+            self.set_lasts(lasts)
+
+        else:
+            obs, reward, done, info = self.env.step(action_id)
+
+        return obs, reward, done, info
+
+    def craft(self, item_to_craft):
+
+        reward = -1  # default reward to craft in a wrong way
+        result = True
+        step_cost = 0  # default step_cost
+        message = ''
+
+        if self.env.inventory_items_quantity['coin'] == 0 :
+            result = False
+            message = "Not enough coins to craft"
+        else :
+            reward, result, step_cost, message = self.env.craft(item_to_craft)
+            if result :
+                self.env.inventory_items_quantity['coin'] -= 1
+
+        return reward, result, step_cost, message
+
 class Fence(gym.core.Wrapper):
     """
     Novelty wrapper to add fence around items in the map
@@ -1586,7 +1664,7 @@ class ExtractIncDec(gym.core.Wrapper):
 def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelty_arg2=''):
 
     novelty_names = ['addchop', 'additem', 'addjump', 'axe', 'axetobreak', 'breakincrease', 'crate', 'extractincdec', 'fence',
-                     'fencerestriction', 'firewall', 'remapaction', 'replaceitem']
+                     'fencerestriction', 'firewall', 'remapaction', 'replaceitem', 'coincraft']
     assert novelty_name in novelty_names, "novelty_name must be one of " + str(novelty_names)
     if novelty_name in ['additem', 'axe', 'axetobreak', 'crate', 'fence', 'fencerestriction', 'firewall', 'remapaction', 'replaceitem']:
         assert difficulty in ['easy', 'medium', 'hard'], "difficulty must be one of 'easy', 'medium', 'hard'"
@@ -1670,5 +1748,7 @@ def inject_novelty(env, novelty_name, difficulty='hard', novelty_arg1='', novelt
                                               "(Item to replace with) are needed"
 
         env = ReplaceItem(env, difficulty, novelty_arg1, novelty_arg2)
+    elif novelty_name == 'coincraft':
+        env = CoinCraft(env, 'medium')
 
     return env
