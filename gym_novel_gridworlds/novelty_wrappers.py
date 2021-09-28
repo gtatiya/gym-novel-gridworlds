@@ -239,7 +239,7 @@ class FireCraftingTableEasy(gym.core.Wrapper):
         self.action_space = spaces.Discrete(len(self.env.actions_id))
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0]+[0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
-            self.env.inventory_items_quantity) + [10] + [2])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+            self.env.inventory_items_quantity) + [10] + [1])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
         # print("Observation space dim: ", self.observation_space.shape[0])
         self.is_crafting_table_on_fire = True   
@@ -312,7 +312,7 @@ class FireCraftingTableHard(gym.core.Wrapper):
         self.action_space = spaces.Discrete(len(self.env.actions_id))
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0] + [0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [30] * len(
-            self.env.inventory_items_quantity) + [15] + [0])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+            self.env.inventory_items_quantity) + [15] + [1])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
         
         self.is_crafting_table_on_fire = True   
@@ -372,6 +372,9 @@ class RubberTree(gym.core.Wrapper):
         self.env.items_lidar.append(self.rubber_tree_name)
         self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)
         self.env.unselectable_items.add(self.rubber_tree_name)
+        self.env.hierarchical_actions.update({'Approach ' + self.rubber_tree_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.hierarchical_actions)                        
+        self.action_space = spaces.Discrete(len(self.env.actions_id))
         self.env.inventory_items_quantity.update({self.rubber_tree_name:0})
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
@@ -395,6 +398,93 @@ class RubberTree(gym.core.Wrapper):
         else:
             obs, reward, done, info = self.env.step(action_id)
             return obs, reward, done, info
+
+class RubberTreeHard(gym.core.Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+    
+        self.rubber_tree_name = 'rubber_tree'  # wooden_axe, iron_axe
+        self.env.items.add(self.rubber_tree_name)
+        self.env.items_quantity.update({self.rubber_tree_name:1})
+        self.env.items_quantity_at_start.update({self.rubber_tree_name:1})
+        self.env.items_id.setdefault(self.rubber_tree_name, len(self.items_id))
+        self.env.unbreakable_items.add(self.rubber_tree_name)
+        self.env.unbreakable_items.add('tree_tap')
+        self.env.items_lidar.append(self.rubber_tree_name)
+        self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)  
+        self.env.items_lidar.append('tree_tap')
+        self.env.items_id_lidar = self.env.set_items_id(self.env.items_lidar)  
+        self.env.unselectable_items.add(self.rubber_tree_name)
+        self.env.hierarchical_actions.update({'Approach ' + self.rubber_tree_name: len(self.env.actions_id)})
+        self.env.actions_id.update(self.env.hierarchical_actions)                        
+        self.env.actions_id.update({'Place_tree_tap': len(self.env.actions_id)})
+        self.action_space = spaces.Discrete(len(self.env.actions_id))
+        self.env.inventory_items_quantity.update({self.rubber_tree_name:0})
+        self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0])
+        self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
+            self.env.inventory_items_quantity) + [10])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+        self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
+
+    def step(self, action_id):
+
+        if action_id == self.actions_id['Extract_rubber']:
+            self.update_block_in_front()
+            if self.block_in_front_str == 'tree_tap':
+                self.inventory_items_quantity['rubber'] += 1  # Extract_rubber
+                reward = -1
+                info = self.env.get_info()
+                info['result'] = True
+                return self.env.get_observation(), reward, False, info
+            else:
+                info = self.env.get_info()
+                info['result'] = False
+                return self.env.get_observation(), -1, False, info 
+        elif action_id == self.actions_id['Place_tree_tap']:
+            self.update_block_in_front()
+            if self.inventory_items_quantity['tree_tap'] >= 1:
+                if self.block_in_front_str == 'air' and self.is_block_in_front_next_to('rubber_tree'):
+                    r, c = self.block_in_front_location
+                    self.map[r][c] = self.items_id['tree_tap']  # Place_tree_tap
+                    self.inventory_items_quantity['tree_tap'] -= 1
+                    reward = -1
+                    info = self.env.get_info()
+                    info['result'] = True
+                    return self.env.get_observation(), reward, False, info
+                else:
+                    info = self.env.get_info()
+                    info['result'] = False
+                    reward = -1
+                    return self.env.get_observation(), reward, False, info
+            else:
+                info = self.env.get_info()
+                info['result'] = False
+                reward = -1
+                return self.env.get_observation(), reward, False, info
+        else:
+            obs, reward, done, info = self.env.step(action_id)
+            return obs, reward, done, info
+
+    def is_block_in_front_next_to(self, item):
+
+        self.update_block_in_front()
+        r, c = self.block_in_front_location
+
+        # Make sure that block_in_front_location is next to item
+        block_in_front_next_to_item = False
+        # NORTH
+        if (0 <= (r - 1) <= self.map_size - 1) and self.map[r - 1][c] == self.items_id[item]:
+            block_in_front_next_to_item = True
+        # SOUTH
+        elif (0 <= (r + 1) <= self.map_size - 1) and self.map[r + 1][c] == self.items_id[item]:
+            block_in_front_next_to_item = True
+        # WEST
+        elif (0 <= (c - 1) <= self.map_size - 1) and self.map[r][c - 1] == self.items_id[item]:
+            block_in_front_next_to_item = True
+        # EAST
+        elif (0 <= (c + 1) <= self.map_size - 1) and self.map[r][c + 1] == self.items_id[item]:
+            block_in_front_next_to_item = True
+
+        return block_in_front_next_to_item
 
 class AxeBreakFireCTEasy(gym.core.Wrapper):
     def __init__(self, env):
@@ -426,7 +516,7 @@ class AxeBreakFireCTEasy(gym.core.Wrapper):
 
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0] + [0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
-            self.env.inventory_items_quantity) + [10] + [2])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+            self.env.inventory_items_quantity) + [10] + [1])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
 
     def reset(self, reset_from_failed_state = False, env_instance = None):
@@ -559,7 +649,7 @@ class ScrapePlank(gym.core.Wrapper):
 
 def inject_novelty(env, novelty_name):
 
-    novelty_names = ['axetobreakeasy', 'axetobreakhard', 'firecraftingtableeasy','firecraftingtablehard', 'rubbertree', 'axefirecteasy', 'scrapeplank']
+    novelty_names = ['axetobreakeasy', 'axetobreakhard', 'firecraftingtableeasy','firecraftingtablehard', 'rubbertree', 'rubbertreehard', 'axefirecteasy', 'scrapeplank']
     assert novelty_name in novelty_names, "novelty_name must be one of " + str(novelty_names)
 
     if novelty_name == 'axetobreakeasy':
@@ -572,6 +662,8 @@ def inject_novelty(env, novelty_name):
         env = FireCraftingTableHard(env)        
     elif novelty_name == 'rubbertree':
         env = RubberTree(env)
+    elif novelty_name == 'rubbertreehard':
+        env = RubberTreeHard(env)
     elif novelty_name == 'axefirecteasy':
         env = AxeBreakFireCTEasy(env)
     elif novelty_name == 'scrapeplank':

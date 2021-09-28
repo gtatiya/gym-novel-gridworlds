@@ -175,9 +175,11 @@ class PogostickV1Env(gym.Env):
             self.available_locations.append(self.agent_location)
 
         # Here we are setting the same blcok in front as the failed agent had.
-        if reset_from_failed_state: # when we need to shuffle the episode from the failed state
+        if reset_from_failed_state and env_instance.block_in_front_str!='tree_tap': # when we need to shuffle the episode from the failed state
             desired_block_in_front_str = env_instance.block_in_front_str # save the desired block in fron from the previous env instance.
+            # print ("desired_block_in_front_str = {}".format(desired_block_in_front_str))
             result = np.where(self.map == self.items_id[desired_block_in_front_str])
+            # print ("result = {}".format(result))
             i = np.random.choice(len(result)-1)
             r, c = result[0][i], result[1][i]
             self.update_block_in_front()
