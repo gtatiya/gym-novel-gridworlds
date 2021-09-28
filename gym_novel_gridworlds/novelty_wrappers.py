@@ -478,9 +478,9 @@ class AxeBreakFireCTEasy(gym.core.Wrapper):
             # Update after each step
             self.env.grab_entities()
             if hasattr(self, 'observation'):
-                obs = self.observation()
+                obs = self.get_observation()
             else:
-                obs = self.env.get_observation()
+                obs = self.get_observation()
             self.env.update_block_in_front()
 
             done = False
