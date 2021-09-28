@@ -239,7 +239,7 @@ class FireCraftingTableEasy(gym.core.Wrapper):
         self.action_space = spaces.Discrete(len(self.env.actions_id))
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0]+[0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
-            self.env.inventory_items_quantity) + [10] + [2])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+            self.env.inventory_items_quantity) + [10] + [1])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
         # print("Observation space dim: ", self.observation_space.shape[0])
         self.is_crafting_table_on_fire = True   
@@ -312,7 +312,7 @@ class FireCraftingTableHard(gym.core.Wrapper):
         self.action_space = spaces.Discrete(len(self.env.actions_id))
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0] + [0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [30] * len(
-            self.env.inventory_items_quantity) + [15] + [0])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+            self.env.inventory_items_quantity) + [15] + [1])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
         
         self.is_crafting_table_on_fire = True   
@@ -516,7 +516,7 @@ class AxeBreakFireCTEasy(gym.core.Wrapper):
 
         self.env.low = np.array([0] * (len(self.env.items_lidar) * self.env.num_beams) + [0] * len(self.env.inventory_items_quantity) + [0] + [0])
         self.env.high = np.array([self.env.max_beam_range] * (len(self.env.items_lidar) * self.env.num_beams) + [10] * len(
-            self.env.inventory_items_quantity) + [10] + [2])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
+            self.env.inventory_items_quantity) + [10] + [1])  # maximum 10 of an object present in the env, and selected item's id is passed. Need to one hot encode it        
         self.observation_space = spaces.Box(self.env.low, self.env.high, dtype=int)     
 
     def reset(self, reset_from_failed_state = False, env_instance = None):
