@@ -31,6 +31,7 @@ class PogostickV2Env(gym.Env):
         self.seed()
         self.map = np.zeros((self.map_size, self.map_size), dtype=int)  # 2D Map
         self.mainroom_bounds = np.array([[2, self.map_size - 2], [2, self.map_size - 2]])
+        self.room_bounds = np.array([[[0, 0], [self.map_size, self.map_size]]]) # For each room, a pair of points specifying top left and bottom right, inclusive
         self.agent_location = (1, 1)  # row, column
         self.direction_id = {'NORTH': 0, 'SOUTH': 1, 'WEST': 2, 'EAST': 3}
         self.agent_facing_str = 'NORTH'
@@ -156,6 +157,7 @@ class PogostickV2Env(gym.Env):
         self.inventory_items_quantity['iron_pickaxe'] = 1
         self.selected_item = ''
         self.mainroom_bounds = np.array([[2, self.map_size - 2], [2, self.map_size - 2]])
+        self.room_bounds = np.array([[[0, 0], [self.map_size, self.map_size]]])
         self.available_locations = []
         self.secondary_room_available_locations = []
         self.not_available_locations = []
@@ -227,7 +229,6 @@ class PogostickV2Env(gym.Env):
             room[:, adjusted_start_loc + room_size[1]:] = 0
             room[:, :adjusted_start_loc] = 0
             room[1:1 + room_size[0] - 2, 1 + adjusted_start_loc:1 + adjusted_start_loc + room_size[1] - 2] = 0
-
         elif side == 'EAST' or side == 'WEST':
             adjusted_start_loc = self.mainroom_bounds[0][0] - 2 + start_loc
 
@@ -236,10 +237,13 @@ class PogostickV2Env(gym.Env):
             room[:adjusted_start_loc, :] = 0
             room[1 + adjusted_start_loc:1 + adjusted_start_loc + room_size[0] - 2, 1:1 + room_size[1] - 2] = 0
 
+
         if side == 'NORTH':
             new_map = np.concatenate((room, self.map), axis=0)
 
             self.mainroom_bounds[0] += room_size[0]
+            self.room_bounds[:, :, 0] += room_size[0]
+            self.room_bounds = np.append(self.room_bounds, [[[0, adjusted_start_loc], [0 + room_size[0], adjusted_start_loc + room_size[1]]]], axis=0)
             # Add doorway
             new_map[room_size[0], adjusted_start_loc + 2] = self.items_id['door']
             new_map[room_size[0] - 1, adjusted_start_loc + 2] = 0
@@ -248,8 +252,11 @@ class PogostickV2Env(gym.Env):
             for r in range(2, room_size[0] - 2):
                 for c in range(adjusted_start_loc + 1, adjusted_start_loc + room_size[1] - 2):
                     self.secondary_room_available_locations.append((r, c))
+
         elif side == 'SOUTH':
             new_map = np.concatenate((self.map, room), axis=0)
+
+            self.room_bounds = np.append(self.room_bounds, [[[self.room_bounds[0][1][0], adjusted_start_loc], [self.room_bounds[0][1][0] + room_size[0], adjusted_start_loc + room_size[1]]]], axis=0)
             # Add doorway
             new_map[self.map.shape[0] - 1, adjusted_start_loc + 2] = self.items_id['door']
             new_map[self.map.shape[0],     adjusted_start_loc + 2] = 0
@@ -259,6 +266,8 @@ class PogostickV2Env(gym.Env):
                     self.secondary_room_available_locations.append((r, c))
         elif side == 'EAST':
             new_map = np.concatenate((self.map, room), axis=1)
+
+            self.room_bounds = np.append(self.room_bounds, [[[adjusted_start_loc, 0], [adjusted_start_loc + room_size[0], 0 + room_size[1]]]], axis=0)
             # Add doorway
             new_map[adjusted_start_loc + 2, self.map.shape[1] - 1] = self.items_id['door']
             new_map[adjusted_start_loc + 2, self.map.shape[1]] = 0
@@ -273,6 +282,8 @@ class PogostickV2Env(gym.Env):
             new_map[adjusted_start_loc + 2, room_size[1] - 1] = 0
 
             self.mainroom_bounds[1] += room_size[1]
+            self.room_bounds[:, :, 1] += room_size[1]
+            self.room_bounds = np.append(self.room_bounds, [[[adjusted_start_loc, self.room_bounds[0][0][1]], [adjusted_start_loc + room_size[0], self.room_bounds[0][0][1] + room_size[1]]]], axis=0)
 
             for r in range(adjusted_start_loc + 2, adjusted_start_loc + room_size[0] - 2):
                 for c in range(2, room_size[1] - 2):
@@ -294,6 +305,17 @@ class PogostickV2Env(gym.Env):
             self.map = self.add_room(sizes[room], sides[room], start_locs[room])
 
         return self.map #TODO clean
+
+    def get_current_room_bounds(self):
+        for room in self.room_bounds:
+            if  self.agent_location[0] <  room[0][0] or \
+                self.agent_location[1] <  room[0][1] or \
+                self.agent_location[0] >= room[1][0] or \
+                self.agent_location[1] >= room[1][1] :
+                continue
+            else :
+                return room
+        raise Error("Agent in unexpected location: " + self.agent_location)
 
 
     def add_item_to_map(self, item, num_items):
@@ -388,11 +410,19 @@ class PogostickV2Env(gym.Env):
 
         assert not self.max_items < len(self.items), "Cannot have more than " + str(self.max_items) + " items"
 
-        obs = {'map': self.map,
+        curr_room = self.get_current_room_bounds()
+        visible_map = self.map[curr_room[0][0]:curr_room[1][0], curr_room[0][1]:curr_room[1][1]]
+        obs = {'map': visible_map,
                'agent_location': self.agent_location,
                'agent_facing_id': self.agent_facing_id,
                'inventory_items_quantity': self.inventory_items_quantity
                }
+
+        # obs = {'map': self.map,
+        #        'agent_location': self.agent_location,
+        #        'agent_facing_id': self.agent_facing_id,
+        #        'inventory_items_quantity': self.inventory_items_quantity
+        #        }
 
         return obs
 
@@ -533,7 +563,7 @@ class PogostickV2Env(gym.Env):
                 message = "Cannot use " + self.block_in_front_str
 
             step_cost = 0.0 #TODO unknown step cost
-        elif action_id == self.actions_id['Interact']:
+        elif action_id == self.actions_id['Interact']:  # Interact needs arg usually
             self.update_block_in_front()
 
             if self.block_in_front_str.startswith('trader'):
