@@ -315,7 +315,13 @@ class PogostickV2Env(gym.Env):
                 continue
             else :
                 return room
-        raise Error("Agent in unexpected location: " + self.agent_location)
+        assert False, f"Agent in unexpected location {self.agent_location}"
+
+    def get_visible_map(self):
+        curr_room = self.get_current_room_bounds()
+        visible_map = self.map[curr_room[0][0]:curr_room[1][0], curr_room[0][1]:curr_room[1][1]]
+
+        return visible_map
 
 
     def add_item_to_map(self, item, num_items):
@@ -410,20 +416,11 @@ class PogostickV2Env(gym.Env):
 
         assert not self.max_items < len(self.items), "Cannot have more than " + str(self.max_items) + " items"
 
-        curr_room = self.get_current_room_bounds()
-        visible_map = self.map[curr_room[0][0]:curr_room[1][0], curr_room[0][1]:curr_room[1][1]]
-        obs = {'map': visible_map,
+        obs = {'map': self.get_visible_map(),
                'agent_location': self.agent_location,
                'agent_facing_id': self.agent_facing_id,
                'inventory_items_quantity': self.inventory_items_quantity
                }
-
-        # obs = {'map': self.map,
-        #        'agent_location': self.agent_location,
-        #        'agent_facing_id': self.agent_facing_id,
-        #        'inventory_items_quantity': self.inventory_items_quantity
-        #        }
-
         return obs
 
     def step(self, action_id):
