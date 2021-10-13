@@ -56,6 +56,7 @@ class PogostickV2Env(gym.Env):
         self.inventory_items_quantity['iron_pickaxe'] = 1
         self.selected_item = ''
         self.entities = set()
+        self.npc_entities = {'trader1': 'EntityTrader', 'trader2': 'EntityTrader'} #, 'thief')
         self.available_locations = []  # locations that do not have item placed
         self.secondary_room_available_locations = []
         self.not_available_locations = []  # locations that have item placed or are above, below, left, right to an item
@@ -98,6 +99,8 @@ class PogostickV2Env(gym.Env):
         # Edit map
         # self.map = self.add_room(self.spawnroom_size, self.spawnroom_side)
         self.map = self.add_rooms()
+        self.metadata_map = np.full(self.map.shape, {})
+        np.place(self.metadata_map, self.map == self.items_id['door'], {'open': 'false'})
 
         # Observation Space
         self.max_items = 25
@@ -172,6 +175,8 @@ class PogostickV2Env(gym.Env):
         self.map = np.pad(self.map, pad_width=1, mode='constant', constant_values=self.items_id['wall'])
         # self.map = self.add_room(self.spawnroom_size, self.spawnroom_side)
         self.map = self.add_rooms()
+        self.metadata_map = np.full(self.map.shape, {})
+        np.place(self.metadata_map, self.map == self.items_id['door'], {'open': 'false'})
 
         """
         available_locations: locations 1 block away from the wall are valid locations to place items and agent
@@ -437,14 +442,15 @@ class PogostickV2Env(gym.Env):
         step_cost = 0  # default step_cost
         message = ''
 
+        # Special case duct tape for open doors - consider function for determining passability
         if action_id == self.actions_id['Forward']:
-            if self.agent_facing_str == 'NORTH' and self.map[r - 1][c] == 0:
+            if self.agent_facing_str == 'NORTH' and (self.map[r - 1][c] == 0 or self.metadata_map[r - 1][c].get('open', 'false') == 'true'):
                 self.agent_location = (r - 1, c)
-            elif self.agent_facing_str == 'SOUTH' and self.map[r + 1][c] == 0:
+            elif self.agent_facing_str == 'SOUTH' and (self.map[r + 1][c] == 0 or self.metadata_map[r - 1][c].get('open', 'false') == 'true'):
                 self.agent_location = (r + 1, c)
-            elif self.agent_facing_str == 'WEST' and self.map[r][c - 1] == 0:
+            elif self.agent_facing_str == 'WEST' and (self.map[r][c - 1] == 0 or self.metadata_map[r - 1][c].get('open', 'false') == 'true'):
                 self.agent_location = (r, c - 1)
-            elif self.agent_facing_str == 'EAST' and self.map[r][c + 1] == 0:
+            elif self.agent_facing_str == 'EAST' and (self.map[r][c + 1] == 0 or self.metadata_map[r - 1][c].get('open', 'false') == 'true'):
                 self.agent_location = (r, c + 1)
             else:
                 result = False
@@ -544,10 +550,13 @@ class PogostickV2Env(gym.Env):
                 message = "Can't collect from " + self.block_in_front_str
         elif action_id == self.actions_id['Use']:
             self.update_block_in_front()
-            # If block in front is a door, remove it from the map TODO is this proper behavior?
+            # If block in front is a door, swap metadata - TODO adjust icons
             if self.block_in_front_str == 'door':
                 block_r, block_c = self.block_in_front_location
-                self.map[block_r][block_c] = 0
+                if self.metadata_map[block_r][block_c]['open'] == 'true':
+                    self.metadata_map[block_r][block_c]['open'] = 'false'
+                elif self.metadata_map[block_r][block_c]['open'] == 'false':
+                    self.metadata_map[block_r][block_c]['open'] = 'true'
             elif self.block_in_front_str == 'safe':
                 if self.selected_item == 'key':
                     block_r, block_c = self.block_in_front_location
