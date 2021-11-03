@@ -589,7 +589,7 @@ class PogostickV2Env(gym.Env):
             item_to_select = '_'.join(select_action.split('_')[1:])
 
             step_cost = 120.0
-            if item_to_select in self.inventory_items_quantity and self.inventory_items_quantity[item_to_select] >= 1:
+            if (item_to_select in self.inventory_items_quantity and self.inventory_items_quantity[item_to_select] >= 1) or item_to_select == '':
                 self.selected_item = item_to_select
             else:
                 result = False
