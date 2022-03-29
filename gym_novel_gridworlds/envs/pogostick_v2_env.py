@@ -64,7 +64,7 @@ class PogostickV2Env(gym.Env):
         # Action Space
         self.actions_id = dict()
         self.manipulation_actions_id = {'Forward': 0, 'Left': 1, 'Right': 2, 'Break': 3, 'Place_tree_tap': 4,
-                                        'Collect': 5, 'Use': 6, 'Interact': 7}
+                                        'Collect': 5, 'Use': 6, 'Interact': 7, 'NOP':8}
         self.actions_id.update(self.manipulation_actions_id)
         self.recipes = {'pogo_stick': {'input': {'stick': 2, 'block_of_titanium': 2, 'block_of_diamond': 2, 'rubber': 1}, 'output': {'pogo_stick': 1}},
                         'stick': {'input': {'plank': 2}, 'output': {'stick': 4}},
@@ -443,7 +443,9 @@ class PogostickV2Env(gym.Env):
         message = ''
 
         # Special case duct tape for open doors - consider function for determining passability
-        if action_id == self.actions_id['Forward']:
+        if action_id == self.actions_id['NOP']:
+            pass
+        elif action_id == self.actions_id['Forward']:
             if self.agent_facing_str == 'NORTH' and (self.map[r - 1][c] == 0 or self.metadata_map[r - 1][c].get('open', 'false') == 'true'):
                 self.agent_location = (r - 1, c)
             elif self.agent_facing_str == 'SOUTH' and (self.map[r + 1][c] == 0 or self.metadata_map[r - 1][c].get('open', 'false') == 'true'):
