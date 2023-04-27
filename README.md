@@ -17,13 +17,11 @@ pip install gym-novel-gridworlds
 
 ## BibTeX
 ```
-@misc{gym_novel_gridworlds,
-  author = {Tatiya, Gyan},
-  title = {Novel Gridworlds Environment for OpenAI Gym},
-  year = {2020},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/gtatiya/gym-novel-gridworlds}},
+@article{goel2021novelgridworlds,
+  title={NovelGridworlds: A Benchmark Environment for Detecting and Adapting to Novelties in Open Worlds},
+  author={Shivam Goel* and Gyan Tatiya* and Matthias Scheutz and Jivko Sinapov},
+  journal={International Foundation for Autonomous Agents and Multiagent Systems, AAMAS},
+  year={2021}
 }
 ```
 
